@@ -9,15 +9,10 @@ import (
 	"os"
 )
 
-// Hash creates a hash of the audio file data provided by the io.ReadSeeker
-// which ignores metadata (ID3, MP4) associated with the file.
+// Hash creates a hash of the audio file data provided by the io.ReadSeeker which metadata
+// (ID3, MP4) invariant.
 func Hash(r io.ReadSeeker) (string, error) {
 	b, err := readBytes(r, 11)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = r.Seek(0, os.SEEK_SET)
 	if err != nil {
 		return "", err
 	}
@@ -42,6 +37,11 @@ func Hash(r io.ReadSeeker) (string, error) {
 
 // HashAll returns a hash of the entire content.
 func HashAll(r io.ReadSeeker) (string, error) {
+	_, err := r.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return "", fmt.Errorf("error seeking to 0: %v", err)
+	}
+
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return "", nil
@@ -49,7 +49,13 @@ func HashAll(r io.ReadSeeker) (string, error) {
 	return hash(b), nil
 }
 
+// HashAtoms constructs a hash of MP4 audio file data provided by the io.ReadSeeker which is metadata invariant.
 func HashAtoms(r io.ReadSeeker) (string, error) {
+	_, err := r.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return "", fmt.Errorf("error seeking to 0: %v", err)
+	}
+
 	for {
 		var size uint32
 		err := binary.Read(r, binary.BigEndian, &size)
@@ -99,10 +105,12 @@ func HashAtoms(r io.ReadSeeker) (string, error) {
 	}
 }
 
+// HashID3v1 constructs a hash of MP3 audio file data (assumed to have ID3v1 tags) provided by the
+// io.ReadSeeker which is metadata invariant.
 func HashID3v1(r io.ReadSeeker) (string, error) {
 	_, err := r.Seek(0, os.SEEK_SET)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error seeking to 0: %v", err)
 	}
 
 	b, err := ioutil.ReadAll(r)
@@ -116,7 +124,14 @@ func HashID3v1(r io.ReadSeeker) (string, error) {
 	return hash(b[:len(b)-128]), nil
 }
 
+// HashID3v2 constructs a hash of MP3 audio file data (assumed to have ID3v2 tags) provided by the
+// io.ReadSeeker which is metadata invariant.
 func HashID3v2(r io.ReadSeeker) (string, error) {
+	_, err := r.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return "", fmt.Errorf("error seeking to 0: %v", err)
+	}
+
 	h, err := readID3v2Header(r)
 	if err != nil {
 		return "", fmt.Errorf("error reading ID3v2 header: %v", err)

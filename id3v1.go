@@ -13,8 +13,8 @@ import (
 	"strings"
 )
 
-// ID3v1Genres is a list of genres as given in the ID3v1 specification.
-var ID3v1Genres = [...]string{
+// id3v1Genres is a list of genres as given in the ID3v1 specification.
+var id3v1Genres = [...]string{
 	"Blues", "Classic Rock", "Country", "Dance", "Disco", "Funk", "Grunge",
 	"Hip-Hop", "Jazz", "Metal", "New Age", "Oldies", "Other", "Pop", "R&B",
 	"Rap", "Reggae", "Rock", "Techno", "Industrial", "Alternative", "Ska",
@@ -95,8 +95,8 @@ func ReadID3v1Tags(r io.Reader) (Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	if int(genreID[0]) < len(ID3v1Genres) {
-		genre = ID3v1Genres[int(genreID[0])]
+	if int(genreID[0]) < len(id3v1Genres) {
+		genre = id3v1Genres[int(genreID[0])]
 	}
 
 	m := make(map[string]interface{})
