@@ -9,34 +9,34 @@ import (
 	"os"
 )
 
-// Hash creates a hash of the audio file data provided by the io.ReadSeeker which metadata
+// Sum creates a checksum of the audio file data provided by the io.ReadSeeker which is metadata
 // (ID3, MP4) invariant.
-func Hash(r io.ReadSeeker) (string, error) {
+func Sum(r io.ReadSeeker) (string, error) {
 	b, err := readBytes(r, 11)
 	if err != nil {
 		return "", err
 	}
 
 	if string(b[4:11]) == "ftypM4A" {
-		return HashAtoms(r)
+		return SumAtoms(r)
 	}
 
 	if string(b[0:3]) == "ID3" {
-		return HashID3v2(r)
+		return SumID3v2(r)
 	}
 
-	h, err := HashID3v1(r)
+	h, err := SumID3v1(r)
 	if err != nil {
 		if err == ErrNotID3v1 {
-			return HashAll(r)
+			return SumAll(r)
 		}
 		return "", err
 	}
 	return h, nil
 }
 
-// HashAll returns a hash of the entire content.
-func HashAll(r io.ReadSeeker) (string, error) {
+// SumAll returns a checksum of the entire content.
+func SumAll(r io.ReadSeeker) (string, error) {
 	_, err := r.Seek(0, os.SEEK_SET)
 	if err != nil {
 		return "", fmt.Errorf("error seeking to 0: %v", err)
@@ -46,16 +46,20 @@ func HashAll(r io.ReadSeeker) (string, error) {
 	if err != nil {
 		return "", nil
 	}
-	return hash(b), nil
+	return sum(b), nil
 }
 
-// HashAtoms constructs a hash of MP4 audio file data provided by the io.ReadSeeker which is metadata invariant.
-func HashAtoms(r io.ReadSeeker) (string, error) {
+// SumAtoms constructs a checksum of MP4 audio file data provided by the io.ReadSeeker which is
+// metadata invariant.
+func SumAtoms(r io.ReadSeeker) (string, error) {
 	_, err := r.Seek(0, os.SEEK_SET)
 	if err != nil {
 		return "", fmt.Errorf("error seeking to 0: %v", err)
 	}
+	return sumAtoms(r)
+}
 
+func sumAtoms(r io.ReadSeeker) (string, error) {
 	for {
 		var size uint32
 		err := binary.Read(r, binary.BigEndian, &size)
@@ -81,7 +85,7 @@ func HashAtoms(r io.ReadSeeker) (string, error) {
 			fallthrough
 
 		case "moov", "udta", "ilst":
-			return HashAtoms(r)
+			return sumAtoms(r)
 
 		case "free":
 			_, err = r.Seek(int64(size-8), os.SEEK_CUR)
@@ -95,7 +99,7 @@ func HashAtoms(r io.ReadSeeker) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("error reading audio data: %v", err)
 			}
-			return hash(b), nil
+			return sum(b), nil
 		}
 
 		_, err = r.Seek(int64(size-8), os.SEEK_CUR)
@@ -105,9 +109,9 @@ func HashAtoms(r io.ReadSeeker) (string, error) {
 	}
 }
 
-// HashID3v1 constructs a hash of MP3 audio file data (assumed to have ID3v1 tags) provided by the
-// io.ReadSeeker which is metadata invariant.
-func HashID3v1(r io.ReadSeeker) (string, error) {
+// SumID3v1 constructs a checksum of MP3 audio file data (assumed to have ID3v1 tags) provided
+// by the io.ReadSeeker which is metadata invariant.
+func SumID3v1(r io.ReadSeeker) (string, error) {
 	_, err := r.Seek(0, os.SEEK_SET)
 	if err != nil {
 		return "", fmt.Errorf("error seeking to 0: %v", err)
@@ -121,12 +125,12 @@ func HashID3v1(r io.ReadSeeker) (string, error) {
 	if len(b) < 128 {
 		return "", fmt.Errorf("file size must be greater than 128 bytes for ID3v1 metadata (size: %v)", len(b))
 	}
-	return hash(b[:len(b)-128]), nil
+	return sum(b[:len(b)-128]), nil
 }
 
-// HashID3v2 constructs a hash of MP3 audio file data (assumed to have ID3v2 tags) provided by the
+// SumID3v2 constructs a hash of MP3 audio file data (assumed to have ID3v2 tags) provided by the
 // io.ReadSeeker which is metadata invariant.
-func HashID3v2(r io.ReadSeeker) (string, error) {
+func SumID3v2(r io.ReadSeeker) (string, error) {
 	_, err := r.Seek(0, os.SEEK_SET)
 	if err != nil {
 		return "", fmt.Errorf("error seeking to 0: %v", err)
@@ -150,9 +154,9 @@ func HashID3v2(r io.ReadSeeker) (string, error) {
 	if len(b) < 128 {
 		return "", fmt.Errorf("file size must be greater than 128 bytes for MP3 (ID3v2 header size: %d, remaining: %d)", h.Size, len(b))
 	}
-	return hash(b[:len(b)-128]), nil
+	return sum(b[:len(b)-128]), nil
 }
 
-func hash(b []byte) string {
+func sum(b []byte) string {
 	return fmt.Sprintf("%x", sha1.Sum(b))
 }

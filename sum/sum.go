@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-The hash tool constructs a hash of a media file exluding any metadata
+The sum tool constructs a checksum of a media file exluding any metadata
 (as recognised by the tag library).
 */
 package main
@@ -28,9 +28,9 @@ func main() {
 	}
 	defer f.Close()
 
-	h, err := tag.Hash(f)
+	h, err := tag.Sum(f)
 	if err != nil {
-		fmt.Printf("error constructing hash: %v\n", err)
+		fmt.Printf("error constructing checksum: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println(h)
