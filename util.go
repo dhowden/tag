@@ -5,6 +5,7 @@
 package tag
 
 import (
+	"encoding/binary"
 	"io"
 )
 
@@ -62,4 +63,10 @@ func read7BitChunkedInt(r io.Reader, n int) (int, error) {
 		return 0, err
 	}
 	return get7BitChunkedInt(b), nil
+}
+
+func readInt32LittleEndian(r io.Reader) (int, error) {
+	var n int32
+	err := binary.Read(r, binary.LittleEndian, &n)
+	return int(n), err
 }

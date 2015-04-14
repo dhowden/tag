@@ -26,6 +26,8 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	switch {
+	case string(b[0:4]) == "fLaC":
+		return ReadFLACTags(r)
 
 	case string(b[4:11]) == "ftypM4A":
 		return ReadAtoms(r)
@@ -53,6 +55,7 @@ const (
 	ID3v2_3        = "ID3v2.3" // ID3v2.3 tag format (most common).
 	ID3v2_4        = "ID3v2.4" // ID3v2.4 tag format.
 	MP4            = "MP4"     // MP4 tag (atom) format.
+	FLAC           = "FLAC"    // FLAC (Vorbis Comment) tag format.
 )
 
 // Metadata is an interface which is used to describe metadata retrieved by this package.
