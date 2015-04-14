@@ -1,8 +1,8 @@
-# MP3 and MP4 metadata parsing library
+# MP3/MP4/FLAC metadata parsing library
 [![Build Status](https://travis-ci.org/dhowden/tag.svg?branch=master)](https://travis-ci.org/dhowden/tag)
 [![GoDoc](https://godoc.org/github.com/dhowden/tag?status.svg)](https://godoc.org/github.com/dhowden/tag)
 
-This package provides MP3 (ID3v1,2.{2,3,4}) and MP4 (ACC, M4A, ALAC) metadata detection, parsing and artwork extraction.
+This package provides MP3 (ID3v1,2.{2,3,4}) and MP4 (ACC, M4A, ALAC) and FLAC metadata detection, parsing and artwork extraction.
 
 Parsed metadata is exported via a single interface (giving a consistent API for all supported metadata formats).
 
