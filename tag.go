@@ -6,7 +6,6 @@
 package tag
 
 import (
-	"bytes"
 	"errors"
 	"io"
 )
@@ -16,25 +15,26 @@ import (
 var ErrNoTagsFound = errors.New("no tags found")
 
 // ReadFrom parses audio file metadata tags (currently supports ID3v1,2.{2,3,4} and MP4).
-// This method attempts to determine the format of the data provided by the reader, and then
-// chooses ReadAtoms (MP4), ReadID3v2Tags (ID3v2.{2,3,4}) or ReadID3v1Tags as appropriate.
-// Returns non-nil error if the format of the given data could not be determined, or if
-// there was a problem parsing the data.
-func ReadFrom(r io.Reader) (Metadata, error) {
+// This method attempts to determine the format of the data provided by the io.ReadSeeker,
+// and then chooses ReadAtoms (MP4), ReadID3v2Tags (ID3v2.{2,3,4}) or ReadID3v1Tags as
+// appropriate.  Returns non-nil error if the format of the given data could not be determined,
+// or if there was a problem parsing the data.
+func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 	b, err := readBytes(r, 11)
 	if err != nil {
 		return nil, err
 	}
 
-	rr := io.MultiReader(bytes.NewReader(b), r)
-	if string(b[4:11]) == "ftypM4A" {
-		return ReadAtoms(rr)
-	}
-	if string(b[0:3]) == "ID3" {
-		return ReadID3v2Tags(rr)
+	switch {
+
+	case string(b[4:11]) == "ftypM4A":
+		return ReadAtoms(r)
+
+	case string(b[0:3]) == "ID3":
+		return ReadID3v2Tags(r)
 	}
 
-	m, err := ReadID3v1Tags(rr)
+	m, err := ReadID3v1Tags(r)
 	if err != nil {
 		if err == ErrNotID3v1 {
 			err = ErrNoTagsFound

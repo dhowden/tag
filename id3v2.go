@@ -7,6 +7,7 @@ package tag
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -219,9 +220,14 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 	return result, nil
 }
 
-// ReadID3v2Tags parses ID3v2.{2,3,4} tags from the given io.Reader into a Metadata, returning
+// ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
 // non-nil error on failure.
-func ReadID3v2Tags(r io.Reader) (Metadata, error) {
+func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
+	_, err := r.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return nil, err
+	}
+
 	h, err := readID3v2Header(r)
 	if err != nil {
 		return nil, err

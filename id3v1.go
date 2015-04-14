@@ -5,10 +5,9 @@
 package tag
 
 import (
-	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -42,16 +41,14 @@ var id3v1Genres = [...]string{
 // ErrNotID3v1 is an error which is returned when no ID3v1 header is found.
 var ErrNotID3v1 = errors.New("invalid ID3v1 header")
 
-// ReadID3v1Tags reads ID3v1 tags from the given io.Reader.  Returns a non-nil error
-// if there was a problem.
-func ReadID3v1Tags(r io.Reader) (Metadata, error) {
-	b, err := ioutil.ReadAll(r)
+// ReadID3v1Tags reads ID3v1 tags from the io.ReadSeeker.  Returns ErrNotID3v1
+// if there are no ID3v1 tags, otherwise non-nil error if there was a problem.
+func ReadID3v1Tags(r io.ReadSeeker) (Metadata, error) {
+	_, err := r.Seek(-128, os.SEEK_END)
 	if err != nil {
 		return nil, err
 	}
 
-	b = b[len(b)-128 : len(b)]
-	r = bytes.NewReader(b)
 	if tag, err := readString(r, 3); err != nil {
 		return nil, err
 	} else if tag != "TAG" {

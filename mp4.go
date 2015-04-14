@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 )
 
@@ -56,11 +57,15 @@ func (f atomNames) Name(n string) []string {
 // metadataMP4 is the implementation of Metadata for MP4 tag (atom) data.
 type metadataMP4 map[string]interface{}
 
-// ReadAtoms reads MP4 metadata atoms from the reader into a Metadata, returning non-nil
-// error if there was a problem.
-func ReadAtoms(r io.Reader) (Metadata, error) {
+// ReadAtoms reads MP4 metadata atoms from the io.ReadSeeker into a Metadata, returning
+// non-nil error if there was a problem.
+func ReadAtoms(r io.ReadSeeker) (Metadata, error) {
+	_, err := r.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return nil, err
+	}
 	m := make(metadataMP4)
-	err := m.readAtoms(r)
+	err = m.readAtoms(r)
 	return m, err
 }
 
