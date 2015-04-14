@@ -6,13 +6,7 @@ package tag
 
 import (
 	"io"
-	"io/ioutil"
 )
-
-func discardN(r io.Reader, n int64) error {
-	_, err := io.CopyN(ioutil.Discard, r, n)
-	return err
-}
 
 func getBit(b byte, n uint) bool {
 	x := byte(1 << n)

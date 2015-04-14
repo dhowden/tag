@@ -69,7 +69,7 @@ func ReadAtoms(r io.ReadSeeker) (Metadata, error) {
 	return m, err
 }
 
-func (m metadataMP4) readAtoms(r io.Reader) error {
+func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 	for {
 		var size uint32
 		err := binary.Read(r, binary.BigEndian, &size)
@@ -96,7 +96,10 @@ func (m metadataMP4) readAtoms(r io.Reader) error {
 		case "moov", "udta", "ilst":
 			return m.readAtoms(r)
 		case "free":
-			discardN(r, int64(size-8))
+			_, err := r.Seek(int64(size-8), os.SEEK_CUR)
+			if err != nil {
+				return err
+			}
 			continue
 		case "mdat": // stop when we get to the data
 			return nil
