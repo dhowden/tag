@@ -5,8 +5,8 @@
 package tag
 
 import (
-	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -65,8 +65,8 @@ type metadataFLAC struct {
 	p *Picture
 }
 
-func (m *metadataFLAC) readFLACMetadataBlock(rs io.ReadSeeker) (last bool, err error) {
-	blockHeader, err := readBytes(rs, 1)
+func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err error) {
+	blockHeader, err := readBytes(r, 1)
 	if err != nil {
 		log.Println(err)
 		return
@@ -77,24 +77,21 @@ func (m *metadataFLAC) readFLACMetadataBlock(rs io.ReadSeeker) (last bool, err e
 		last = true
 	}
 
-	blockLen, err := readInt(rs, 3)
+	blockLen, err := readInt(r, 3)
 	if err != nil {
 		return
 	}
 
-	if BlockType(blockHeader[0]) != VorbisCommentBlock {
-		_, err = rs.Seek(int64(blockLen), os.SEEK_CUR)
-		return
-	}
+	switch BlockType(blockHeader[0]) {
+	case VorbisCommentBlock:
+		err = m.readVorbisComment(r)
 
-	commentBytes := make([]byte, blockLen)
-	_, err = rs.Read(commentBytes)
-	if err != nil {
-		return
-	}
+	case PictureBlock:
+		err = m.readPictureBlock(r)
 
-	r := bytes.NewReader(commentBytes)
-	m.readVorbisComment(r)
+	default:
+		_, err = r.Seek(int64(blockLen), os.SEEK_CUR)
+	}
 	return
 }
 
@@ -129,6 +126,81 @@ func (m *metadataFLAC) readVorbisComment(r io.Reader) error {
 			return err
 		}
 		m.c[strings.ToLower(k)] = v
+	}
+	return nil
+}
+
+func (m *metadataFLAC) readPictureBlock(r io.Reader) error {
+	b, err := readInt(r, 4)
+	if err != nil {
+		return err
+	}
+	pictureType, ok := pictureTypes[byte(b)]
+	if !ok {
+		return fmt.Errorf("invalid picture type: %v", b)
+	}
+	mimeLen, err := readInt(r, 4)
+	if err != nil {
+		return err
+	}
+	mime, err := readString(r, mimeLen)
+	if err != nil {
+		return err
+	}
+
+	ext := ""
+	switch mime {
+	case "image/jpeg":
+		ext = "jpg"
+	case "image/png":
+		ext = "png"
+	case "image/gif":
+		ext = "gif"
+	}
+
+	descLen, err := readInt(r, 4)
+	if err != nil {
+		return err
+	}
+	desc, err := readString(r, descLen)
+	if err != nil {
+		return err
+	}
+
+	// We skip width <32>, height <32>, colorDepth <32>, coloresUsed <32>
+	_, err = readInt(r, 4) // width
+	if err != nil {
+		return err
+	}
+	_, err = readInt(r, 4) // height
+	if err != nil {
+		return err
+	}
+	_, err = readInt(r, 4) // color depth
+	if err != nil {
+		return err
+	}
+	_, err = readInt(r, 4) // colors used
+	if err != nil {
+		return err
+	}
+
+	dataLen, err := readInt(r, 4)
+	if err != nil {
+		return err
+	}
+	data := make([]byte, dataLen)
+	_, err = io.ReadFull(r, data)
+	if err != nil {
+		return err
+	}
+
+	m.p = &Picture{
+		Ext:         ext,
+		MIMEType:    mime,
+		Type:        pictureType,
+		Description: desc,
+		Data:        data,
 	}
 	return nil
 }
