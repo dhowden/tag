@@ -128,7 +128,7 @@ func SumID3v1(r io.ReadSeeker) (string, error) {
 	return sum(b[:len(b)-128]), nil
 }
 
-// SumID3v2 constructs a hash of MP3 audio file data (assumed to have ID3v2 tags) provided by the
+// SumID3v2 constructs a checksum of MP3 audio file data (assumed to have ID3v2 tags) provided by the
 // io.ReadSeeker which is metadata invariant.
 func SumID3v2(r io.ReadSeeker) (string, error) {
 	_, err := r.Seek(0, os.SEEK_SET)
