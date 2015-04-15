@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -68,7 +67,6 @@ type metadataFLAC struct {
 func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err error) {
 	blockHeader, err := readBytes(r, 1)
 	if err != nil {
-		log.Println(err)
 		return
 	}
 
