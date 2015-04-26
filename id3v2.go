@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -166,6 +167,17 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 		if err != nil {
 			return nil, err
 		}
+
+		// There can be multiple tag with the same name. Append a number to the
+		// name if there is more than one.
+		if _, ok := result[name]; ok {
+			orig := name
+			for i := 0; ok; i++ {
+				_, ok = result[orig+"_"+strconv.Itoa(i)]
+				name = orig + "_" + strconv.Itoa(i)
+			}
+		}
+
 		offset += headerSize + size
 
 		// Check this stuff out...
@@ -200,14 +212,14 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			}
 			result[name] = txt
 
-		case name == "APIC":
+		case name[0:4] == "APIC":
 			p, err := readAPICFrame(b)
 			if err != nil {
 				return nil, err
 			}
 			result[name] = p
 
-		case name == "PIC":
+		case name[0:3] == "PIC":
 			p, err := readPICFrame(b)
 			if err != nil {
 				return nil, err
