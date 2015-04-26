@@ -166,6 +166,12 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 		if err != nil {
 			return nil, err
 		}
+		// if size=0, we certainly are in a padding zone. ignore the rest of
+		// the tags. and if size > h.Size, we have a problem
+		if size == 0 || size > h.Size {
+			break
+		}
+
 		offset += headerSize + size
 
 		// Check this stuff out...
@@ -220,6 +226,29 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 	return result, nil
 }
 
+type Unsynchroniser struct {
+	orig io.Reader
+}
+
+// filter io.Reader which skip the Unsynchronisation bytes
+func (r *Unsynchroniser) Read(p []byte) (int, error) {
+	nextOk := false
+	for i := 0; i < len(p); i++ {
+		if n, err := r.orig.Read(p[i : i+1]); n == 0 || err != nil {
+			return i, err
+		}
+		if i >= 1 && p[i-1] == 255 && p[i] == 0 && !nextOk {
+			// we must skip this 00
+			i--
+			// but not the next one
+			nextOk = true
+		} else {
+			nextOk = false
+		}
+	}
+	return len(p), nil
+}
+
 // ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
 // non-nil error on failure.
 func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
@@ -232,7 +261,16 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	f, err := readID3v2Frames(r, h)
+
+	var ur io.Reader
+
+	if h.Unsynchronisation {
+		ur = &Unsynchroniser{orig: r}
+	} else {
+		ur = r
+	}
+
+	f, err := readID3v2Frames(ur, h)
 	if err != nil {
 		return nil, err
 	}
