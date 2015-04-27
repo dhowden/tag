@@ -168,16 +168,6 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			return nil, err
 		}
 
-		// There can be multiple tag with the same name. Append a number to the
-		// name if there is more than one.
-		if _, ok := result[name]; ok {
-			orig := name
-			for i := 0; ok; i++ {
-				_, ok = result[orig+"_"+strconv.Itoa(i)]
-				name = orig + "_" + strconv.Itoa(i)
-			}
-		}
-
 		offset += headerSize + size
 
 		// Check this stuff out...
@@ -194,14 +184,24 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			continue
 		}
 
+		b, err := readBytes(r, size)
+		if err != nil {
+			return nil, err
+		}
+
 		name = strings.TrimSpace(name)
 		if name == "" {
 			break
 		}
 
-		b, err := readBytes(r, size)
-		if err != nil {
-			return nil, err
+		// There can be multiple tag with the same name. Append a number to the
+		// name if there is more than one.
+		rawName := name
+		if _, ok := result[rawName]; ok {
+			for i := 0; ok; i++ {
+				rawName = name + "_" + strconv.Itoa(i)
+				_, ok = result[rawName]
+			}
 		}
 
 		switch {
@@ -210,21 +210,21 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			if err != nil {
 				return nil, err
 			}
-			result[name] = txt
+			result[rawName] = txt
 
-		case len(name) > 3 && name[0:4] == "APIC":
+		case name == "APIC":
 			p, err := readAPICFrame(b)
 			if err != nil {
 				return nil, err
 			}
-			result[name] = p
+			result[rawName] = p
 
-		case len(name) > 2 && name[0:3] == "PIC":
+		case name == "PIC":
 			p, err := readPICFrame(b)
 			if err != nil {
 				return nil, err
 			}
-			result[name] = p
+			result[rawName] = p
 		}
 
 		continue
