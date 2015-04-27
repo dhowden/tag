@@ -212,14 +212,14 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			}
 			result[name] = txt
 
-		case name[0:4] == "APIC":
+		case len(name) > 3 && name[0:4] == "APIC":
 			p, err := readAPICFrame(b)
 			if err != nil {
 				return nil, err
 			}
 			result[name] = p
 
-		case name[0:3] == "PIC":
+		case len(name) > 2 && name[0:3] == "PIC":
 			p, err := readPICFrame(b)
 			if err != nil {
 				return nil, err
