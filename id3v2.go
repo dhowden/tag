@@ -167,8 +167,8 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			return nil, err
 		}
 		// if size=0, we certainly are in a padding zone. ignore the rest of
-		// the tags. and if size > h.Size, we have a problem
-		if size == 0 || size > h.Size {
+		// the tags
+		if size == 0 {
 			break
 		}
 
@@ -227,24 +227,41 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 }
 
 type Unsynchroniser struct {
-	orig io.Reader
+	orig      io.Reader
+	prevWasFF bool
 }
 
 // filter io.Reader which skip the Unsynchronisation bytes
 func (r *Unsynchroniser) Read(p []byte) (int, error) {
-	nextOk := false
 	for i := 0; i < len(p); i++ {
-		if n, err := r.orig.Read(p[i : i+1]); n == 0 || err != nil {
+		// there is only one byte to read.
+		if i == len(p)-1 {
+			if n, err := r.orig.Read(p[i : i+1]); n == 0 || err != nil {
+				return i, err
+			}
+			// we need to read this last byte once more
+			if r.prevWasFF && p[i] == 0 {
+				i--
+				r.prevWasFF = false
+			}
+			r.prevWasFF = (p[i] == 255)
+			continue
+		}
+		if n, err := r.orig.Read(p[i : i+2]); n == 0 || err != nil {
 			return i, err
 		}
-		if i >= 1 && p[i-1] == 255 && p[i] == 0 && !nextOk {
-			// we must skip this 00
-			i--
-			// but not the next one
-			nextOk = true
-		} else {
-			nextOk = false
+		if r.prevWasFF && p[i] == 0 {
+			p[i] = p[i+1]
+			r.prevWasFF = false
+			continue
 		}
+		if p[i] == 255 && p[i+1] == 0 {
+			r.prevWasFF = false
+			continue
+		}
+		r.prevWasFF = (p[i+1] == 255)
+		// these 2 bytes are fine, we skip none
+		i++
 	}
 	return len(p), nil
 }
