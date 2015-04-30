@@ -252,7 +252,7 @@ func (r *Unsynchroniser) Read(p []byte) (int, error) {
 		}
 		if r.prevWasFF && p[i] == 0 {
 			p[i] = p[i+1]
-			r.prevWasFF = false
+			r.prevWasFF = (p[i+1] == 255)
 			continue
 		}
 		if p[i] == 255 && p[i+1] == 0 {
