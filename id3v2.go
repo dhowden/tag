@@ -168,6 +168,12 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			return nil, err
 		}
 
+		// if size=0, we certainly are in a padding zone. ignore the rest of
+		// the tags
+		if size == 0 {
+			break
+		}
+
 		offset += headerSize + size
 
 		// Check this stuff out...
@@ -232,6 +238,46 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 	return result, nil
 }
 
+type Unsynchroniser struct {
+	orig      io.Reader
+	prevWasFF bool
+}
+
+// filter io.Reader which skip the Unsynchronisation bytes
+func (r *Unsynchroniser) Read(p []byte) (int, error) {
+	for i := 0; i < len(p); i++ {
+		// there is only one byte to read.
+		if i == len(p)-1 {
+			if n, err := r.orig.Read(p[i : i+1]); n == 0 || err != nil {
+				return i, err
+			}
+			// we need to read this last byte once more
+			if r.prevWasFF && p[i] == 0 {
+				i--
+				r.prevWasFF = false
+			}
+			r.prevWasFF = (p[i] == 255)
+			continue
+		}
+		if n, err := r.orig.Read(p[i : i+2]); n == 0 || err != nil {
+			return i, err
+		}
+		if r.prevWasFF && p[i] == 0 {
+			p[i] = p[i+1]
+			r.prevWasFF = (p[i+1] == 255)
+			continue
+		}
+		if p[i] == 255 && p[i+1] == 0 {
+			r.prevWasFF = false
+			continue
+		}
+		r.prevWasFF = (p[i+1] == 255)
+		// these 2 bytes are fine, we skip none
+		i++
+	}
+	return len(p), nil
+}
+
 // ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
 // non-nil error on failure.
 func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
@@ -244,7 +290,16 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	f, err := readID3v2Frames(r, h)
+
+	var ur io.Reader
+
+	if h.Unsynchronisation {
+		ur = &Unsynchroniser{orig: r}
+	} else {
+		ur = r
+	}
+
+	f, err := readID3v2Frames(ur, h)
 	if err != nil {
 		return nil, err
 	}
