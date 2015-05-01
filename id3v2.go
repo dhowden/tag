@@ -238,44 +238,28 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 	return result, nil
 }
 
-type Unsynchroniser struct {
-	orig      io.Reader
-	prevWasFF bool
+type unsynchroniser struct {
+	io.Reader
+	ff bool
 }
 
 // filter io.Reader which skip the Unsynchronisation bytes
-func (r *Unsynchroniser) Read(p []byte) (int, error) {
-	for i := 0; i < len(p); i++ {
-		// there is only one byte to read.
-		if i == len(p)-1 {
-			if n, err := r.orig.Read(p[i : i+1]); n == 0 || err != nil {
-				return i, err
-			}
-			// we need to read this last byte once more
-			if r.prevWasFF && p[i] == 0 {
-				i--
-				r.prevWasFF = false
-			}
-			r.prevWasFF = (p[i] == 255)
-			continue
-		}
-		if n, err := r.orig.Read(p[i : i+2]); n == 0 || err != nil {
+func (r *unsynchroniser) Read(p []byte) (i int, err error) {
+	b := make([]byte, 1)
+	for i < len(p) {
+		x, err := r.Reader.Read(b)
+		if err != nil || x == 0 {
 			return i, err
 		}
-		if r.prevWasFF && p[i] == 0 {
-			p[i] = p[i+1]
-			r.prevWasFF = (p[i+1] == 255)
+		if r.ff && b[0] == 0x00 {
+			r.ff = false
 			continue
 		}
-		if p[i] == 255 && p[i+1] == 0 {
-			r.prevWasFF = false
-			continue
-		}
-		r.prevWasFF = (p[i+1] == 255)
-		// these 2 bytes are fine, we skip none
+		p[i] = b[0]
 		i++
+		r.ff = (b[0] == 0xFF)
 	}
-	return len(p), nil
+	return
 }
 
 // ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
@@ -292,11 +276,9 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	var ur io.Reader
-
+	ur = r
 	if h.Unsynchronisation {
-		ur = &Unsynchroniser{orig: r}
-	} else {
-		ur = r
+		ur = &unsynchroniser{Reader: r}
 	}
 
 	f, err := readID3v2Frames(ur, h)
