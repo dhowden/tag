@@ -244,11 +244,11 @@ type unsynchroniser struct {
 }
 
 // filter io.Reader which skip the Unsynchronisation bytes
-func (r *unsynchroniser) Read(p []byte) (i int, err error) {
+func (r *unsynchroniser) Read(p []byte) (int, error) {
 	b := make([]byte, 1)
+	i := 0
 	for i < len(p) {
-		x, err := r.Reader.Read(b)
-		if err != nil || x == 0 {
+		if n, err := r.Reader.Read(b); err != nil || n == 0 {
 			return i, err
 		}
 		if r.ff && b[0] == 0x00 {
@@ -259,7 +259,7 @@ func (r *unsynchroniser) Read(p []byte) (i int, err error) {
 		i++
 		r.ff = (b[0] == 0xFF)
 	}
-	return
+	return i, nil
 }
 
 // ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
