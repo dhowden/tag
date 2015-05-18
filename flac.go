@@ -288,6 +288,10 @@ func (m *metadataFLAC) Disc() (int, int) {
 	return x, n
 }
 
+func (m *metadataFLAC) Lyrics() string {
+	return m.c["lyrics"]
+}
+
 func (m *metadataFLAC) Picture() *Picture {
 	return m.p
 }

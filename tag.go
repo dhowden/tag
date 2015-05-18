@@ -90,6 +90,8 @@ type Metadata interface {
 	// Picture returns a picture, or nil if not avilable.
 	Picture() *Picture
 
+	Lyrics() string
+
 	// Raw returns the raw mapping of retrieved tag names and associated values.
 	// NB: tag/atom names are not standardised between formats.
 	Raw() map[string]interface{}
