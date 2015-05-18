@@ -116,7 +116,7 @@ func (m metadataID3v2) Disc() (int, int) {
 func (m metadataID3v2) Lyrics() string {
 	t, ok := m.frames[frames.Name("lyrics", m.Format())]
 	if !ok {
-		return "toto"
+		return ""
 	}
 	return t.(*Comm).Text
 }
