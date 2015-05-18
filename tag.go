@@ -87,11 +87,8 @@ type Metadata interface {
 	// Disc returns the disc number and total discs, or zero values if unavailable.
 	Disc() (int, int)
 
-	// Picture returns a picture, or nil if not available.
+	// Picture returns a picture, or nil if not avilable.
 	Picture() *Picture
-
-	// Lyrics returns the lyrics, or an empty string if unavailable.
-	Lyrics() string
 
 	// Raw returns the raw mapping of retrieved tag names and associated values.
 	// NB: tag/atom names are not standardised between formats.
