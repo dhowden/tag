@@ -222,6 +222,14 @@ func (m metadataMP4) Disc() (int, int) {
 	return x, 0
 }
 
+func (m metadataMP4) Lyrics() string {
+	t, ok := m["\xa9lyr"]
+	if !ok {
+		return ""
+	}
+	return t.(string)
+}
+
 func (m metadataMP4) Picture() *Picture {
 	v, ok := m["covr"]
 	if !ok {

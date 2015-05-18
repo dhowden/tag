@@ -37,6 +37,7 @@ var frames = frameNames(map[string][2]string{
 	"disc":         [2]string{"TPA", "TPOS"},
 	"genre":        [2]string{"TCO", "TCON"},
 	"picture":      [2]string{"PIC", "APIC"},
+	"lyrics":       [2]string{"", "USLT"},
 })
 
 // metadataID3v2 is the implementation of Metadata used for ID3v2 tags.
@@ -110,6 +111,14 @@ func (m metadataID3v2) Track() (int, int) {
 
 func (m metadataID3v2) Disc() (int, int) {
 	return parseXofN(m.getString(frames.Name("disc", m.Format())))
+}
+
+func (m metadataID3v2) Lyrics() string {
+	t, ok := m.frames[frames.Name("lyrics", m.Format())]
+	if !ok {
+		return ""
+	}
+	return t.(*Comm).Text
 }
 
 func (m metadataID3v2) Picture() *Picture {
