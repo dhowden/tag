@@ -134,4 +134,3 @@ func (m metadataID3v1) AlbumArtist() string { return "" }
 func (m metadataID3v1) Composer() string    { return "" }
 func (metadataID3v1) Disc() (int, int)      { return 0, 0 }
 func (m metadataID3v1) Picture() *Picture   { return nil }
-func (m metadataID3v1) Lyrics() string      { return "" }

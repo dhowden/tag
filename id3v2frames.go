@@ -81,21 +81,6 @@ func decodeUTF16(b []byte, bo binary.ByteOrder) string {
 	return string(utf16.Decode(s))
 }
 
-// Comm is a type used in COMM and USLT tag. It's a text with a description and
-// a specified language
-
-type Comm struct {
-	Language    string
-	Description string
-	Text        string
-}
-
-// String returns a string representation of the underlying Comm instance.
-func (t Comm) String() string {
-	return fmt.Sprintf("Text{Lang: '%v', Description: '%v', %v lines}",
-		t.Language, t.Description, strings.Count(t.Text, "\n"))
-}
-
 var pictureTypes = map[byte]string{
 	0x00: "Other",
 	0x01: "32x32 pixels 'file icon' (PNG only)",
@@ -170,35 +155,6 @@ func readPICFrame(b []byte) (*Picture, error) {
 		Type:        pictureTypes[picType],
 		Description: desc,
 		Data:        descDataSplit[1],
-	}, nil
-}
-
-// IDv2.{3,4}
-// -- Header
-// <Header for 'Unsynchronised lyrics/text transcription', ID: "USLT">
-// <Header for 'Comment', ID: "COMM">
-// -- readTextWithDescrFrame
-// Text encoding       $xx
-// Language            $xx xx xx
-// Content descriptor  <text string according to encoding> $00 (00)
-// Lyrics/text         <full text string according to encoding>
-func readTextWithDescrFrame(b []byte) (*Comm, error) {
-	enc := b[0]
-	descTextSplit := bytes.SplitN(b[4:], []byte{0}, 2)
-	desc, err := decodeText(enc, descTextSplit[0])
-	if err != nil {
-		return nil, fmt.Errorf("error decoding tag description text: %v", err)
-	}
-
-	text, err := decodeText(enc, descTextSplit[1])
-	if err != nil {
-		return nil, fmt.Errorf("error decoding tag description text: %v", err)
-	}
-
-	return &Comm{
-		Language:    string(b[1:4]),
-		Description: desc,
-		Text:        text,
 	}, nil
 }
 
