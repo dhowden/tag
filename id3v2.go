@@ -218,6 +218,13 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			}
 			result[rawName] = txt
 
+		case name == "COMM" || name == "USLT":
+			t, err := readTextWithDescrFrame(b)
+			if err != nil {
+				return nil, err
+			}
+			result[rawName] = t
+
 		case name == "APIC":
 			p, err := readAPICFrame(b)
 			if err != nil {
