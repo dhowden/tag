@@ -37,9 +37,15 @@ func decodeText(enc byte, b []byte) (string, error) {
 		return decodeISO8859(b), nil
 
 	case 1: // UTF-16 with byte order marker
+		if len(b) == 1 {
+			return "", nil
+		}
 		return decodeUTF16WithBOM(b)
 
 	case 2: // UTF-16 without byte order (assuming BigEndian)
+		if len(b) == 1 {
+			return "", nil
+		}
 		return decodeUTF16(b, binary.BigEndian), nil
 
 	case 3: // UTF-8
@@ -47,6 +53,17 @@ func decodeText(enc byte, b []byte) (string, error) {
 
 	default:
 		return "", fmt.Errorf("invalid encoding byte %x", enc)
+	}
+}
+
+func encodingDelim(enc byte) ([]byte, error) {
+	switch enc {
+	case 0, 3: // see decodeText above
+		return []byte{0}, nil
+	case 1, 2: // see decodeText above
+		return []byte{0, 0}, nil
+	default:
+		return nil, fmt.Errorf("invalid encoding byte %x", enc)
 	}
 }
 
@@ -79,6 +96,54 @@ func decodeUTF16(b []byte, bo binary.ByteOrder) string {
 		s = append(s, bo.Uint16(b[i:i+2]))
 	}
 	return string(utf16.Decode(s))
+}
+
+// Comm is a type used in COMM and USLT tag. It's a text with a description and
+// a specified language
+type Comm struct {
+	Language    string
+	Description string
+	Text        string
+}
+
+// String returns a string representation of the underlying Comm instance.
+func (t Comm) String() string {
+	return fmt.Sprintf("Text{Lang: '%v', Description: '%v', %v lines}",
+		t.Language, t.Description, strings.Count(t.Text, "\n"))
+}
+
+// IDv2.{3,4}
+// -- Header
+// <Header for 'Unsynchronised lyrics/text transcription', ID: "USLT">
+// <Header for 'Comment', ID: "COMM">
+// -- readTextWithDescrFrame
+// Text encoding       $xx
+// Language            $xx xx xx
+// Content descriptor  <text string according to encoding> $00 (00)
+// Lyrics/text         <full text string according to encoding>
+func readTextWithDescrFrame(b []byte) (*Comm, error) {
+	enc := b[0]
+	delim, err := encodingDelim(enc)
+	if err != nil {
+		return nil, err
+	}
+
+	descTextSplit := bytes.SplitN(b[4:], delim, 2)
+	desc, err := decodeText(enc, descTextSplit[0])
+	if err != nil {
+		return nil, fmt.Errorf("error decoding tag description text: %v", err)
+	}
+
+	text, err := decodeText(enc, descTextSplit[1])
+	if err != nil {
+		return nil, fmt.Errorf("error decoding tag text: %v", err)
+	}
+
+	return &Comm{
+		Language:    string(b[1:4]),
+		Description: desc,
+		Text:        text,
+	}, nil
 }
 
 var pictureTypes = map[byte]string{
@@ -135,7 +200,12 @@ func readPICFrame(b []byte) (*Picture, error) {
 	ext := string(b[1:4])
 	picType := b[4]
 
-	descDataSplit := bytes.SplitN(b[5:], []byte{0}, 2)
+	delim, err := encodingDelim(enc)
+	if err != nil {
+		return nil, err
+	}
+
+	descDataSplit := bytes.SplitN(b[5:], delim, 2)
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding PIC description text: %v", err)
@@ -175,7 +245,12 @@ func readAPICFrame(b []byte) (*Picture, error) {
 	b = mimeDataSplit[1]
 	picType := b[0]
 
-	descDataSplit := bytes.SplitN(b[1:], []byte{0}, 2)
+	delim, err := encodingDelim(enc)
+	if err != nil {
+		return nil, err
+	}
+
+	descDataSplit := bytes.SplitN(b[1:], delim, 2)
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding APIC description text: %v", err)
