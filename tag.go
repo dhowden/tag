@@ -29,6 +29,9 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 	case string(b[0:4]) == "fLaC":
 		return ReadFLACTags(r)
 
+	case string(b[0:4]) == "OggS":
+		return ReadOGGTags(r)
+
 	case string(b[4:11]) == "ftypM4A":
 		return ReadAtoms(r)
 
