@@ -75,4 +75,5 @@ func printMetadata(m tag.Metadata) {
 	fmt.Printf(" Disc: %v of %v\n", disc, discCount)
 
 	fmt.Printf(" Picture: %v\n", m.Picture())
+	fmt.Printf(" Lyrics: %v\n", m.Lyrics())
 }
