@@ -285,5 +285,16 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	mp3, err := getMp3Infos(r, false)
+	if err != nil {
+		return nil, err
+	}
+	f["stream_type"] = fmt.Sprintf("MPEG %v Layer %v", mp3.Version, mp3.Layer)
+	f["stream_bitrate"] = fmt.Sprintf("%v kbps %v", mp3.Bitrate, mp3.Type)
+	f["stream_audio"] = fmt.Sprintf("%v Hz %v", mp3.Sampling, mp3.Mode)
+	f["stream_size"] = mp3.Size
+	f["stream_length"] = int(mp3.Length)
+
 	return metadataID3v2{header: h, frames: f}, nil
 }
