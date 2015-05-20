@@ -95,6 +95,10 @@ func getMp3Infos(r io.ReadSeeker, slow bool) (*mp3Infos, error) {
 		if i < 4 {
 			break
 		}
+        if i==5 {
+            // invalid frame
+            continue
+        }
 		pos += int64(i)
 		// looking for the synchronization bits
 		switch {
@@ -108,10 +112,8 @@ func getMp3Infos(r io.ReadSeeker, slow bool) (*mp3Infos, error) {
 			if h.vbr > 2 {
 				nbscan = 100
 			}
-			break
 		case string(buf[:3]) == "TAG":
 			pos, _ = r.Seek(128-4, 1) // id3v1 tag, bypass it
-			break
 		default:
 			r.Seek(-3, 1) // looking for the next header
 		}
