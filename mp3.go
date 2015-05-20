@@ -210,7 +210,7 @@ func samplePerFrame(v string, l string) float64 {
 	return 1152
 }
 
-// constants for deconding frames
+// constants for decoding frame header
 var (
 	mp3Version = [4]string{"2.5", "x", "2", "1"}
 	mp3Layer   = [4]string{"r", "III", "II", "I"}
