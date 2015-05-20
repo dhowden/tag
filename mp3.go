@@ -95,23 +95,20 @@ func getMp3Infos(r io.ReadSeeker, slow bool) (*mp3Infos, error) {
 		if i < 4 {
 			break
 		}
-        if i==5 {
-            // invalid frame
-            continue
-        }
-		pos += int64(i)
 		// looking for the synchronization bits
 		switch {
 		case (buf[0] == 255) && (buf[1] >= 224):
 			// found a valid mp3 frame. we read the header to know where the
 			// next one is
-			pos, _ = r.Seek(h.readHeader(buf)-4, 1)
-
-			bitrateSum += h.Bitrate
-			frameCount++
-			if h.vbr > 2 {
-				nbscan = 100
+			offset := h.readHeader(buf) - 4
+			if offset != 1 { // only count valid frames
+				bitrateSum += h.Bitrate
+				frameCount++
+				if h.vbr > 2 {
+					nbscan = 100 // the file is VBR, use more sample to estimate its size
+				}
 			}
+			pos, _ = r.Seek(offset, 1) // jump to the next frame
 		case string(buf[:3]) == "TAG":
 			pos, _ = r.Seek(128-4, 1) // id3v1 tag, bypass it
 		default:
