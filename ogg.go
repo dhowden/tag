@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	idType      byte = 1
-	commentType      = 3
+	idType      int = 1
+	commentType     = 3
 )
 
 // ReadOGGTags reads OGG metadata from the io.ReadSeeker, returning the resulting
@@ -94,7 +94,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	// Packet type is comment, type 3
-	t, err := readInt(r, 1)
+	t, err = readInt(r, 1)
 	if err != nil {
 		return nil, err
 	}
