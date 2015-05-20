@@ -158,7 +158,7 @@ func (h *mp3Infos) readHeader(buf [8]byte) int64 {
 
 	// if the values are off, try 1 byte after
 	if l == 0 || b == 15 || v == 1 || b == 0 || s == 3 {
-		return 11
+		return 5
 	}
 
 	if h.Version == "" {
