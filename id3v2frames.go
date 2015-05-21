@@ -67,6 +67,26 @@ func encodingDelim(enc byte) ([]byte, error) {
 	}
 }
 
+func dataSplit(b []byte, enc byte) ([][]byte, error) {
+	delim, err := encodingDelim(enc)
+	if err != nil {
+		return nil, err
+	}
+	result := bytes.SplitN(b, delim, 2)
+
+	if len(result) <= 1 {
+		return result, nil
+	}
+
+	if result[1][0] == 0 {
+		// there was a double (or triple) 0 and we cut too early
+		result[0] = append(result[0], make([]byte, 0)...)
+		result[1] = result[1][1:]
+	}
+
+	return result, nil
+}
+
 func decodeISO8859(b []byte) string {
 	r := make([]rune, len(b))
 	for i, x := range b {
@@ -123,12 +143,11 @@ func (t Comm) String() string {
 // Lyrics/text         <full text string according to encoding>
 func readTextWithDescrFrame(b []byte) (*Comm, error) {
 	enc := b[0]
-	delim, err := encodingDelim(enc)
+
+	descTextSplit, err := dataSplit(b[4:], enc)
 	if err != nil {
 		return nil, err
 	}
-
-	descTextSplit := bytes.SplitN(b[4:], delim, 2)
 	desc, err := decodeText(enc, descTextSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding tag description text: %v", err)
@@ -200,12 +219,10 @@ func readPICFrame(b []byte) (*Picture, error) {
 	ext := string(b[1:4])
 	picType := b[4]
 
-	delim, err := encodingDelim(enc)
+	descDataSplit, err := dataSplit(b[5:], enc)
 	if err != nil {
 		return nil, err
 	}
-
-	descDataSplit := bytes.SplitN(b[5:], delim, 2)
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding PIC description text: %v", err)
@@ -245,12 +262,10 @@ func readAPICFrame(b []byte) (*Picture, error) {
 	b = mimeDataSplit[1]
 	picType := b[0]
 
-	delim, err := encodingDelim(enc)
+	descDataSplit, err := dataSplit(b[1:], enc)
 	if err != nil {
 		return nil, err
 	}
-
-	descDataSplit := bytes.SplitN(b[1:], delim, 2)
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding APIC description text: %v", err)
