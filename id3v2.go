@@ -211,15 +211,36 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 		}
 
 		switch {
+		case name == "TXXX" || name == "TXX":
+			t, err := readTextWithDescrFrame(b, false, true) // no lang, but enc
+			if err != nil {
+				return nil, err
+			}
+			result[rawName] = t
+
 		case name[0] == 'T':
-			txt, err := readTFrame(b)
+			txt, err := readTFrame(b, true) // text is encoded
+			if err != nil {
+				return nil, err
+			}
+			result[rawName] = txt
+
+		case name == "WXXX" || name == "WXX":
+			t, err := readTextWithDescrFrame(b, false, false) // no lang, no enc
+			if err != nil {
+				return nil, err
+			}
+			result[rawName] = t
+
+		case name[0] == 'W':
+			txt, err := readTFrame(b, false) // url are not encoded
 			if err != nil {
 				return nil, err
 			}
 			result[rawName] = txt
 
 		case name == "COMM" || name == "USLT":
-			t, err := readTextWithDescrFrame(b)
+			t, err := readTextWithDescrFrame(b, true, true) // both lang and enc
 			if err != nil {
 				return nil, err
 			}
