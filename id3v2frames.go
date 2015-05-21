@@ -195,6 +195,26 @@ func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error)
 	}, nil
 }
 
+// UFID is composed of a provider (frequently an URL and a binary identifier)
+// The identifier can be a text (Musicbrainz use texts, but not necessary)
+type Ufid struct {
+	Provider   string
+	Identifier []byte
+}
+
+func (u Ufid) String() string {
+	return fmt.Sprintf("%v (%v)", u.Provider, string(u.Identifier))
+}
+
+func readUfid(b []byte) (*Ufid, error) {
+	result := bytes.SplitN(b, []byte{0}, 2)
+
+	return &Ufid{
+		Provider:   string(result[0]),
+		Identifier: result[1],
+	}, nil
+}
+
 var pictureTypes = map[byte]string{
 	0x00: "Other",
 	0x01: "32x32 pixels 'file icon' (PNG only)",
