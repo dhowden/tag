@@ -12,7 +12,11 @@ import (
 	"unicode/utf16"
 )
 
-func readTFrame(b []byte) (string, error) {
+// when the frame is not encoded, add a 0 at the start
+func readTFrame(b []byte, encoded bool) (string, error) {
+	if !encoded {
+		b = append([]byte{0}, b[0:]...)
+	}
 	txt, err := parseText(b)
 	if err != nil {
 		return "", err
@@ -118,8 +122,10 @@ func decodeUTF16(b []byte, bo binary.ByteOrder) string {
 	return string(utf16.Decode(s))
 }
 
-// Comm is a type used in COMM and USLT tag. It's a text with a description and
-// a specified language
+// Comm is a type used in COMM, UFID, TXXX, WXXX and USLT tag.
+// It's a text with a description and a specified language
+// For WXXX, TXXX and UFID, we don't set a Language
+
 type Comm struct {
 	Language    string
 	Description string
@@ -128,29 +134,53 @@ type Comm struct {
 
 // String returns a string representation of the underlying Comm instance.
 func (t Comm) String() string {
-	return fmt.Sprintf("Text{Lang: '%v', Description: '%v', %v lines}",
-		t.Language, t.Description, strings.Count(t.Text, "\n"))
+	if t.Language != "" {
+		return fmt.Sprintf("Text{Lang: '%v', Description: '%v', %v lines}",
+			t.Language, t.Description, strings.Count(t.Text, "\n"))
+	}
+	return fmt.Sprintf("Text{Description: '%v', %v}", t.Description, t.Text)
 }
 
 // IDv2.{3,4}
 // -- Header
 // <Header for 'Unsynchronised lyrics/text transcription', ID: "USLT">
 // <Header for 'Comment', ID: "COMM">
-// -- readTextWithDescrFrame
+// -- readTextWithDescrFrame(data, true, true)
 // Text encoding       $xx
 // Language            $xx xx xx
 // Content descriptor  <text string according to encoding> $00 (00)
 // Lyrics/text         <full text string according to encoding>
-func readTextWithDescrFrame(b []byte) (*Comm, error) {
+// -- Header
+// <Header for         'User defined text information frame', ID: "TXXX">
+// <Header for         'User defined URL link frame', ID: "WXXX">
+// -- readTextWithDescrFrame(data, false, <isDataEncoded>)
+// Text encoding       $xx
+// Description         <text string according to encoding> $00 (00)
+// Value               <text string according to encoding>
+func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error) {
+	var descTextSplit [][]byte
+	var lang string
+	var err error
 	enc := b[0]
 
-	descTextSplit, err := dataSplit(b[4:], enc)
+	if hasLang {
+		lang = string(b[1:4])
+		descTextSplit, err = dataSplit(b[4:], enc)
+	} else {
+		lang = ""
+		descTextSplit, err = dataSplit(b[1:], enc)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	desc, err := decodeText(enc, descTextSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding tag description text: %v", err)
+	}
+
+	if !encoded {
+		enc = byte(0)
 	}
 
 	text, err := decodeText(enc, descTextSplit[1])
@@ -159,7 +189,7 @@ func readTextWithDescrFrame(b []byte) (*Comm, error) {
 	}
 
 	return &Comm{
-		Language:    string(b[1:4]),
+		Language:    lang,
 		Description: desc,
 		Text:        text,
 	}, nil
