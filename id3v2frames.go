@@ -125,7 +125,6 @@ func decodeUTF16(b []byte, bo binary.ByteOrder) string {
 // Comm is a type used in COMM, UFID, TXXX, WXXX and USLT tag.
 // It's a text with a description and a specified language
 // For WXXX, TXXX and UFID, we don't set a Language
-
 type Comm struct {
 	Language    string
 	Description string
