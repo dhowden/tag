@@ -141,7 +141,7 @@ func SumID3v2(r io.ReadSeeker) (string, error) {
 		return "", fmt.Errorf("error reading ID3v2 header: %v", err)
 	}
 
-	_, err = r.Seek(int64(h.Size), os.SEEK_SET)
+	_, err = r.Seek(int64(h.Size)+10, os.SEEK_SET)
 	if err != nil {
 		return "", fmt.Errorf("error seeking to end of ID3V2 header: %v", err)
 	}
