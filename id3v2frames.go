@@ -158,18 +158,16 @@ func (t Comm) String() string {
 // Description         <text string according to encoding> $00 (00)
 // Value               <text string according to encoding>
 func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error) {
-	var descTextSplit [][]byte
-	var lang string
-	var err error
 	enc := b[0]
+	b = b[1:]
 
+	c := &Comm{}
 	if hasLang {
-		lang = string(b[1:4])
-		descTextSplit, err = dataSplit(b[4:], enc)
-	} else {
-		lang = ""
-		descTextSplit, err = dataSplit(b[1:], enc)
+		c.Language = string(b[:3])
+		b = b[3:]
 	}
+
+	descTextSplit, err := dataSplit(b, enc)
 	if err != nil {
 		return nil, err
 	}
@@ -178,21 +176,18 @@ func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding tag description text: %v", err)
 	}
+	c.Description = desc
 
 	if !encoded {
 		enc = byte(0)
 	}
-
 	text, err := decodeText(enc, descTextSplit[1])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding tag text: %v", err)
 	}
+	c.Text = text
 
-	return &Comm{
-		Language:    lang,
-		Description: desc,
-		Text:        text,
-	}, nil
+	return c, nil
 }
 
 // UFID is composed of a provider (frequently a URL and a binary identifier)
