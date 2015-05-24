@@ -226,7 +226,7 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			result[rawName] = txt
 
 		case name == "UFID" || name == "UFI":
-			t, err := readUfid(b)
+			t, err := readUFID(b)
 			if err != nil {
 				return nil, err
 			}
