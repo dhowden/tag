@@ -76,9 +76,10 @@ func dataSplit(b []byte, enc byte) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := bytes.SplitN(b, delim, 2)
 
-	if len(result) <= 1 {
+	result := bytes.SplitN(b, delim, 2)
+	if len(result) != 2 {
+
 		return result, nil
 	}
 
@@ -87,7 +88,6 @@ func dataSplit(b []byte, enc byte) ([][]byte, error) {
 		result[0] = append(result[0], make([]byte, 0)...)
 		result[1] = result[1][1:]
 	}
-
 	return result, nil
 }
 
