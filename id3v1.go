@@ -112,6 +112,7 @@ func ReadID3v1Tags(r io.ReadSeeker) (Metadata, error) {
 type metadataID3v1 map[string]interface{}
 
 func (metadataID3v1) Format() Format                { return ID3v1 }
+func (metadataID3v1) FileType() FileType            { return MP3 }
 func (m metadataID3v1) Raw() map[string]interface{} { return m }
 
 func (m metadataID3v1) Title() string  { return m["title"].(string) }

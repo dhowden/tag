@@ -61,6 +61,7 @@ func main() {
 
 func printMetadata(m tag.Metadata) {
 	fmt.Printf("Metadata Format: %v\n", m.Format())
+	fmt.Printf("File Type: %v\n", m.FileType())
 
 	fmt.Printf(" Title: %v\n", m.Title())
 	fmt.Printf(" Album: %v\n", m.Album())

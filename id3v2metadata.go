@@ -63,6 +63,7 @@ func (m metadataID3v2) getInt(k string) int {
 }
 
 func (m metadataID3v2) Format() Format              { return m.header.Version }
+func (m metadataID3v2) FileType() FileType          { return MP3 }
 func (m metadataID3v2) Raw() map[string]interface{} { return m.frames }
 
 func (m metadataID3v2) Title() string {

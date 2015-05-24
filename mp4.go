@@ -151,7 +151,8 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 	}
 }
 
-func (metadataMP4) Format() Format { return MP4 }
+func (metadataMP4) Format() Format     { return MP4 }
+func (metadataMP4) FileType() FileType { return AAC }
 
 func (m metadataMP4) Raw() map[string]interface{} { return m }
 

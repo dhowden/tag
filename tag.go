@@ -58,13 +58,29 @@ const (
 	ID3v2_3        = "ID3v2.3" // ID3v2.3 tag format (most common).
 	ID3v2_4        = "ID3v2.4" // ID3v2.4 tag format.
 	MP4            = "MP4"     // MP4 tag (atom) format.
-	FLAC           = "FLAC"    // FLAC (Vorbis Comment) tag format.
+	VORBIS         = "VORBIS"  // Vorbis Comment tag format.
+)
+
+// FileType is an enumeration of the audio file types supported by this package, in particular
+// there are audio file types which share metadata formats, and this type is used to distinguish
+// between them.
+type FileType string
+
+const (
+	MP3  FileType = "MP3"  // MP3 file
+	AAC           = "AAC"  // M4A file (MP4)
+	ALAC          = "ALAC" // Apple Lossless file FIXME: actually detect this
+	FLAC          = "FLAC" // FLAC file
+	OGG           = "OGG"  // OGG file
 )
 
 // Metadata is an interface which is used to describe metadata retrieved by this package.
 type Metadata interface {
 	// Format returns the metadata Format used to encode the data.
 	Format() Format
+
+	// FileType returns the file type of the audio file.
+	FileType() FileType
 
 	// Title returns the title of the track.
 	Title() string

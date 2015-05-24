@@ -108,11 +108,18 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	m := &metadataFLAC{
-		c: make(map[string]string),
+	m := &metadataOGG{
+		newMetadataVorbis(),
 	}
 
 	err = m.readVorbisComment(r)
-
 	return m, err
+}
+
+type metadataOGG struct {
+	*metadataVorbis
+}
+
+func (m *metadataOGG) FileType() FileType {
+	return OGG
 }
