@@ -12,7 +12,11 @@ import (
 	"unicode/utf16"
 )
 
-func readTFrame(b []byte) (string, error) {
+// when the frame is not encoded, add a 0 at the start
+func readTFrame(b []byte, encoded bool) (string, error) {
+	if !encoded {
+		b = append([]byte{0}, b[0:]...)
+	}
 	txt, err := parseText(b)
 	if err != nil {
 		return "", err
@@ -67,6 +71,26 @@ func encodingDelim(enc byte) ([]byte, error) {
 	}
 }
 
+func dataSplit(b []byte, enc byte) ([][]byte, error) {
+	delim, err := encodingDelim(enc)
+	if err != nil {
+		return nil, err
+	}
+	result := bytes.SplitN(b, delim, 2)
+
+	if len(result) <= 1 {
+		return result, nil
+	}
+
+	if result[1][0] == 0 {
+		// there was a double (or triple) 0 and we cut too early
+		result[0] = append(result[0], make([]byte, 0)...)
+		result[1] = result[1][1:]
+	}
+
+	return result, nil
+}
+
 func decodeISO8859(b []byte) string {
 	r := make([]rune, len(b))
 	for i, x := range b {
@@ -98,8 +122,10 @@ func decodeUTF16(b []byte, bo binary.ByteOrder) string {
 	return string(utf16.Decode(s))
 }
 
-// Comm is a type used in COMM and USLT tag. It's a text with a description and
-// a specified language
+// Comm is a type used in COMM, UFID, TXXX, WXXX and USLT tag.
+// It's a text with a description and a specified language
+// For WXXX, TXXX and UFID, we don't set a Language
+
 type Comm struct {
 	Language    string
 	Description string
@@ -108,30 +134,53 @@ type Comm struct {
 
 // String returns a string representation of the underlying Comm instance.
 func (t Comm) String() string {
-	return fmt.Sprintf("Text{Lang: '%v', Description: '%v', %v lines}",
-		t.Language, t.Description, strings.Count(t.Text, "\n"))
+	if t.Language != "" {
+		return fmt.Sprintf("Text{Lang: '%v', Description: '%v', %v lines}",
+			t.Language, t.Description, strings.Count(t.Text, "\n"))
+	}
+	return fmt.Sprintf("Text{Description: '%v', %v}", t.Description, t.Text)
 }
 
 // IDv2.{3,4}
 // -- Header
 // <Header for 'Unsynchronised lyrics/text transcription', ID: "USLT">
 // <Header for 'Comment', ID: "COMM">
-// -- readTextWithDescrFrame
+// -- readTextWithDescrFrame(data, true, true)
 // Text encoding       $xx
 // Language            $xx xx xx
 // Content descriptor  <text string according to encoding> $00 (00)
 // Lyrics/text         <full text string according to encoding>
-func readTextWithDescrFrame(b []byte) (*Comm, error) {
+// -- Header
+// <Header for         'User defined text information frame', ID: "TXXX">
+// <Header for         'User defined URL link frame', ID: "WXXX">
+// -- readTextWithDescrFrame(data, false, <isDataEncoded>)
+// Text encoding       $xx
+// Description         <text string according to encoding> $00 (00)
+// Value               <text string according to encoding>
+func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error) {
+	var descTextSplit [][]byte
+	var lang string
+	var err error
 	enc := b[0]
-	delim, err := encodingDelim(enc)
+
+	if hasLang {
+		lang = string(b[1:4])
+		descTextSplit, err = dataSplit(b[4:], enc)
+	} else {
+		lang = ""
+		descTextSplit, err = dataSplit(b[1:], enc)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	descTextSplit := bytes.SplitN(b[4:], delim, 2)
 	desc, err := decodeText(enc, descTextSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding tag description text: %v", err)
+	}
+
+	if !encoded {
+		enc = byte(0)
 	}
 
 	text, err := decodeText(enc, descTextSplit[1])
@@ -140,9 +189,29 @@ func readTextWithDescrFrame(b []byte) (*Comm, error) {
 	}
 
 	return &Comm{
-		Language:    string(b[1:4]),
+		Language:    lang,
 		Description: desc,
 		Text:        text,
+	}, nil
+}
+
+// UFID is composed of a provider (frequently an URL and a binary identifier)
+// The identifier can be a text (Musicbrainz use texts, but not necessary)
+type Ufid struct {
+	Provider   string
+	Identifier []byte
+}
+
+func (u Ufid) String() string {
+	return fmt.Sprintf("%v (%v)", u.Provider, string(u.Identifier))
+}
+
+func readUfid(b []byte) (*Ufid, error) {
+	result := bytes.SplitN(b, []byte{0}, 2)
+
+	return &Ufid{
+		Provider:   string(result[0]),
+		Identifier: result[1],
 	}, nil
 }
 
@@ -200,12 +269,10 @@ func readPICFrame(b []byte) (*Picture, error) {
 	ext := string(b[1:4])
 	picType := b[4]
 
-	delim, err := encodingDelim(enc)
+	descDataSplit, err := dataSplit(b[5:], enc)
 	if err != nil {
 		return nil, err
 	}
-
-	descDataSplit := bytes.SplitN(b[5:], delim, 2)
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding PIC description text: %v", err)
@@ -245,12 +312,10 @@ func readAPICFrame(b []byte) (*Picture, error) {
 	b = mimeDataSplit[1]
 	picType := b[0]
 
-	delim, err := encodingDelim(enc)
+	descDataSplit, err := dataSplit(b[1:], enc)
 	if err != nil {
 		return nil, err
 	}
-
-	descDataSplit := bytes.SplitN(b[1:], delim, 2)
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding APIC description text: %v", err)
