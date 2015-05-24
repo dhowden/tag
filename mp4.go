@@ -72,6 +72,7 @@ func ReadAtoms(r io.ReadSeeker) (Metadata, error) {
 func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 	for {
 		var size uint32
+		var subname string
 		err := binary.Read(r, binary.BigEndian, &size)
 		if err != nil {
 			if err == io.EOF {
@@ -101,8 +102,76 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 				return err
 			}
 			continue
-		case "mdat": // stop when we get to the data
-			return nil
+		case "mdat": // skip the data, the metadata can be at the end
+			_, err := r.Seek(int64(size-8), os.SEEK_CUR)
+			if err != nil {
+				return err
+			}
+			continue
+		case "----":
+			/* Generic atom.
+			   Should have 3 sub atoms : mean, name and data.
+			   We check that mean=="com.apple.iTunes" and we use the subname as
+			   the name, and move to the data atom if anything goes wrong, we jump
+			   at the end of the "----" atom.  */
+
+			// let's read the mean atom
+			var subsize uint32
+			err := binary.Read(r, binary.BigEndian, &subsize)
+			if err != nil {
+				return err
+			}
+			sub, err := readString(r, 4)
+			if err != nil {
+				return err
+			}
+
+			if sub != "mean" {
+				// Something's wrong. Remove 8 read bytes from the size counter
+				// since "----" is not a known atom name, the whole data will
+				// be skipped
+				size -= 8
+				break
+			}
+
+			mean, err := readBytes(r, int(subsize-8))
+			if err != nil {
+				return err
+			}
+			// Remove the size of the mean atom from the size counter
+			size -= subsize
+
+			if string(mean[4:]) != "com.apple.iTunes" {
+				// Something's wrong, skip this atom
+				break
+			}
+
+			// Let's read the name atom
+			err = binary.Read(r, binary.BigEndian, &subsize)
+			if err != nil {
+				return err
+			}
+			sub, err = readString(r, 4)
+			if err != nil {
+				return err
+			}
+
+			if sub != "name" {
+				// Something's wrong
+				size -= 8
+				break
+			}
+
+			b, err := readBytes(r, int(subsize-8))
+			if err != nil {
+				return err
+			}
+			/* Remove the size of the name atom from the size counter.
+			We should now be at the start of the data subatom and size should
+			be equal to the size of the data atom and its header */
+			size -= subsize
+
+			subname = string(b[4:])
 		}
 
 		b, err := readBytes(r, int(size-8))
@@ -110,8 +179,14 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 			return err
 		}
 
+		// Allow all known atoms and the valid "----" atoms
 		_, ok := atoms[name]
-		if !ok {
+		switch {
+		case name == "----" && subname == "":
+			continue
+		case name == "----":
+			name = subname
+		case !ok:
 			continue
 		}
 
