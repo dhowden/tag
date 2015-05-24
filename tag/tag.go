@@ -67,6 +67,7 @@ func printMetadata(m tag.Metadata) {
 	fmt.Printf(" Album: %v\n", m.Album())
 	fmt.Printf(" Artist: %v\n", m.Artist())
 	fmt.Printf(" Composer: %v\n", m.Composer())
+	fmt.Printf(" Genre: %v\n", m.Genre())
 	fmt.Printf(" Year: %v\n", m.Year())
 
 	track, trackCount := m.Track()

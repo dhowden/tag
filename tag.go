@@ -100,6 +100,9 @@ type Metadata interface {
 	// Year returns the year of the track.
 	Year() int
 
+	// Genre returns the genre of the track.
+	Genre() string
+
 	// Track returns the track number and total tracks, or zero values if unavailable.
 	Track() (int, int)
 

@@ -16,6 +16,7 @@ Parsed metadata is exported via a single interface (giving a consistent API for 
     	Artist() string
     	AlbumArtist() string
     	Composer() string
+    	Genre() string
     	Year() int
 
     	Track() (int, int) // Number, Total
