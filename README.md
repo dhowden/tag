@@ -23,6 +23,7 @@ Parsed metadata is exported via a single interface (giving a consistent API for 
     	Disc() (int, int) // Number, Total
 
     	Picture() *Picture // Artwork
+    	Lyrics() string
 
     	Raw() map[string]interface{} // NB: raw tag names are not consistent across formats.
     }
