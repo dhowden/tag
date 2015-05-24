@@ -7,6 +7,7 @@ package tag
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf16"
@@ -208,6 +209,9 @@ func (u UFID) String() string {
 
 func readUFID(b []byte) (*UFID, error) {
 	result := bytes.SplitN(b, []byte{0}, 2)
+	if len(result) != 2 {
+		return nil, errors.New("expected to split UFID data into 2 pieces")
+	}
 
 	return &UFID{
 		Provider:   string(result[0]),
