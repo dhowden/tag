@@ -13,23 +13,22 @@ import (
 	"unicode/utf16"
 )
 
-// when the frame is not encoded, add a 0 at the start
-func readTFrame(b []byte, encoded bool) (string, error) {
-	if !encoded {
-		b = append([]byte{0}, b[0:]...)
+func readWFrame(b []byte) (string, error) {
+	// Frame text is always encoded in ISO-8859-1
+	b = append([]byte{0}, b...)
+	return readTFrame(b)
+}
+
+func readTFrame(b []byte) (string, error) {
+	if len(b) == 0 {
+		return "", nil
 	}
-	txt, err := parseText(b)
+
+	txt, err := decodeText(b[0], b[1:])
 	if err != nil {
 		return "", err
 	}
 	return strings.Join(strings.Split(txt, string([]byte{0})), ""), nil
-}
-
-func parseText(b []byte) (string, error) {
-	if len(b) == 0 {
-		return "", nil
-	}
-	return decodeText(b[0], b[1:])
 }
 
 func decodeText(enc byte, b []byte) (string, error) {

@@ -219,7 +219,7 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			result[rawName] = t
 
 		case name[0] == 'T':
-			txt, err := readTFrame(b, true) // text is encoded
+			txt, err := readTFrame(b)
 			if err != nil {
 				return nil, err
 			}
@@ -240,7 +240,7 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			result[rawName] = t
 
 		case name[0] == 'W':
-			txt, err := readTFrame(b, false) // url are not encoded
+			txt, err := readWFrame(b)
 			if err != nil {
 				return nil, err
 			}
