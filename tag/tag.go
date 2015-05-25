@@ -8,17 +8,21 @@ The tag tool reads metadata from media files (as supported by the tag library).
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
-
 	"github.com/dhowden/tag"
+	"io/ioutil"
+	"net/http"
+	"os"
 )
 
 var raw bool
+var mb bool
 
 func init() {
 	flag.BoolVar(&raw, "raw", false, "show raw tag data")
+	flag.BoolVar(&mb, "mb", false, "display MusicBrainz info, if any")
 }
 
 func main() {
@@ -55,6 +59,37 @@ func main() {
 				continue
 			}
 			fmt.Printf("%#v: %#v\n", k, v)
+		}
+	}
+
+	if mb {
+		mb := tag.MusicBrainz(&m)
+		if mb.Artist != "" {
+			url := fmt.Sprintf("http://musicbrainz.org/ws/2/artist/%v/?fmt=json&inc=url-rels", mb.Artist)
+			geturl(url)
+		} else {
+			fmt.Println("Didn't find any MusicBrainz Artist Id in the tags")
+		}
+	}
+}
+
+func geturl(url string) {
+	response, err := http.Get(url)
+	var data interface{}
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	} else {
+		defer response.Body.Close()
+		contents, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			fmt.Printf("%s", err)
+			os.Exit(1)
+		}
+		if err = json.Unmarshal(contents, &data); err == nil {
+			if text, err := json.MarshalIndent(data, "", "     "); err == nil {
+				fmt.Print(string(text))
+			}
 		}
 	}
 }
