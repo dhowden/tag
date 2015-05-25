@@ -90,7 +90,7 @@ func readCustomAtom(r io.ReadSeeker, size uint32) (string, uint32, error) {
 		if err != nil {
 			return "----", size - subsize, err
 		}
-		// Remove the size of the mean atom from the size counter
+		// Remove the size of the atom from the size counter
 		size -= subsize
 
 		switch string(subname) {
@@ -165,15 +165,13 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 			// Generic atom.
 			// Should have 3 sub atoms : mean, name and data.
 			// We check that mean=="com.apple.iTunes" and we use the subname as
-			// the name, and move to the data atom if anything goes wrong,
-			// we jump at the end of the "----" atom.
+			// the name, and move to the data atom.
+			// If anything goes wrong, we jump at the end of the "----" atom.
 			name, size, err = readCustomAtom(r, size)
 			if err != nil {
 				return err
 			}
-			if name != "----" {
-				ok = true
-			}
+			ok = (name != "----")
 		default:
 			_, ok = atoms[name]
 		}
