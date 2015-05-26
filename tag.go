@@ -49,6 +49,71 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 	return m, nil
 }
 
+// Extract the tag created with MusicBrainz Picard.
+// You can use them with the MusicBrainz and LastFM API
+// See https://picard.musicbrainz.org/docs/mappings/ for the mappings
+func MusicBrainz(m *Metadata) (mb *MBInfo) {
+	txxx := "TXXX"
+	ufid := "UFID"
+	raw := (*m).Raw()
+	mb = new(MBInfo)
+
+	for k, v := range raw {
+		var frame, value string
+		switch (*m).Format() {
+		case ID3v2_2:
+			txxx = "TXX"
+			ufid = "UFI"
+			fallthrough
+		case ID3v2_3, ID3v2_4:
+			switch k[0:len(txxx)] {
+			case txxx:
+				if str, ok := v.(*Comm); ok {
+					frame = str.Description
+					value = str.Text
+				}
+			case ufid:
+				if str, ok := v.(*UFID); ok {
+					if str.Provider == "http://musicbrainz.org" {
+						value = string(str.Identifier)
+						frame = "MusicBrainz Track Id"
+					}
+				}
+			}
+		case MP4, VORBIS, FLAC:
+			if str, ok := v.(string); ok {
+				frame = k
+				value = str
+			}
+		}
+
+		switch frame {
+		case "Acoustid Id", "acoustid_id":
+			mb.Acoustid = value
+		case "MusicBrainz Album Artist Id", "musicbrainz_albumartistid":
+			mb.AlbumArtist = value
+		case "MusicBrainz Artist Id", "musicbrainz_artistid":
+			mb.Artist = value
+		case "MusicBrainz Release Group Id", "musicbrainz_releasegroupid":
+			mb.ReleaseGroup = value
+		case "MusicBrainz Album Id", "musicbrainz_albumid":
+			mb.Album = value
+		case "MusicBrainz Track Id", "musicbrainz_trackid":
+			mb.Track = value
+		}
+	}
+	return
+}
+
+type MBInfo struct {
+	AlbumArtist  string `musicbrainz:"musicbrainz_albumartistid"`
+	Album        string `musicbrainz:"musicbrainz_albumid"`
+	Artist       string `musicbrainz:"musicbrainz_artistid"`
+	ReleaseGroup string `musicbrainz:"musicbrainz_releasegroupid"`
+	Track        string `musicbrainz:"musicbrainz_recordingid"`
+	Acoustid     string `musicbrainz:"acoustid_id"`
+}
+
 // Format is an enumeration of metadata types supported by this package.
 type Format string
 
