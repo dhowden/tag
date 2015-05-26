@@ -21,6 +21,7 @@ var atomTypes = map[int]string{
 	21: "uint8",
 }
 
+// NB: atoms does not include "----", this is handled separately
 var atoms = atomNames(map[string]string{
 	"\xa9alb": "album",
 	"\xa9art": "artist",
@@ -70,72 +71,13 @@ func ReadAtoms(r io.ReadSeeker) (Metadata, error) {
 	return m, err
 }
 
-func readCustomAtom(r io.ReadSeeker, size uint32) (string, uint32, error) {
-	var datasize uint32
-	var datapos int64
-	var name string
-	var mean string
-
-	for size > 8 {
-		var subsize uint32
-		err := binary.Read(r, binary.BigEndian, &subsize)
-		if err != nil {
-			return "----", size - 4, err
-		}
-		subname, err := readString(r, 4)
-		if err != nil {
-			return "----", size - 8, err
-		}
-		b, err := readBytes(r, int(subsize-8))
-		if err != nil {
-			return "----", size - subsize, err
-		}
-		// Remove the size of the atom from the size counter
-		size -= subsize
-
-		switch string(subname) {
-		case "mean":
-			mean = string(b[4:])
-		case "name":
-			name = string(b[4:])
-		case "data":
-			datapos, err = r.Seek(0, os.SEEK_CUR)
-			if err != nil {
-				return "----", size, err
-			}
-			datasize = subsize
-			datapos -= int64(subsize)
-		}
-	}
-	// there should remain only the header size
-	if size != 8 {
-		return "----", size, errors.New("---- atom out of bound")
-	}
-	if mean == "com.apple.iTunes" && datasize != 0 && name != "" {
-		// we jump just before the data subatom
-		_, err := r.Seek(datapos, os.SEEK_SET)
-		if err != nil {
-			return "----", size, err
-		}
-		return name, datasize + 8, nil
-	}
-	return "----", size, nil
-}
-
 func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 	for {
-		var size uint32
-		ok := false
-		err := binary.Read(r, binary.BigEndian, &size)
+		name, size, err := readAtomHeader(r)
 		if err != nil {
 			if err == io.EOF {
 				return nil
 			}
-			return err
-		}
-
-		name, err := readString(r, 4)
-		if err != nil {
 			return err
 		}
 
@@ -147,79 +89,139 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 				return err
 			}
 			fallthrough
+
 		case "moov", "udta", "ilst":
 			return m.readAtoms(r)
-		case "free":
-			_, err := r.Seek(int64(size-8), os.SEEK_CUR)
-			if err != nil {
-				return err
-			}
-			continue
-		case "mdat": // skip the data, the metadata can be at the end
-			_, err := r.Seek(int64(size-8), os.SEEK_CUR)
-			if err != nil {
-				return err
-			}
-			continue
-		case "----":
-			// Generic atom.
-			// Should have 3 sub atoms : mean, name and data.
-			// We check that mean=="com.apple.iTunes" and we use the subname as
-			// the name, and move to the data atom.
-			// If anything goes wrong, we jump at the end of the "----" atom.
+		}
+
+		_, ok := atoms[name]
+		if name == "----" {
 			name, size, err = readCustomAtom(r, size)
 			if err != nil {
 				return err
 			}
-			ok = (name != "----")
-		default:
-			_, ok = atoms[name]
+
+			if name != "----" {
+				ok = true
+			}
 		}
 
-		b, err := readBytes(r, int(size-8))
-		if err != nil {
-			return err
-		}
-
-		// At this point, we allow all known atoms and the valid "----" atoms
 		if !ok {
+			_, err := r.Seek(int64(size-8), os.SEEK_CUR)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 
-		// 16: name + size + "data" + size (4 bytes each), have already read 8
-		b = b[8:]
-		class := getInt(b[1:4])
-		contentType, ok := atomTypes[class]
-		if !ok {
-			return fmt.Errorf("invalid content type: %v", class)
-		}
-
-		b = b[8:]
-		switch name {
-		case "trkn", "disk":
-			m[name] = int(b[3])
-			m[name+"_count"] = int(b[5])
-		default:
-			var data interface{}
-			// 4: atom version (1 byte) + atom flags (3 bytes)
-			// 4: NULL (usually locale indicator)
-			switch contentType {
-			case "text":
-				data = string(b)
-
-			case "uint8":
-				data = getInt(b[:1])
-
-			case "jpeg", "png":
-				data = &Picture{
-					Ext:      contentType,
-					MIMEType: "image/" + contentType,
-					Data:     b,
-				}
-			}
-			m[name] = data
+		err = m.readAtomData(r, name, size-8)
+		if err != nil {
+			return err
 		}
 	}
+}
+
+func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32) error {
+	b, err := readBytes(r, int(size))
+	if err != nil {
+		return err
+	}
+
+	// "data" + size (4 bytes each)
+	b = b[8:]
+
+	class := getInt(b[1:4])
+	contentType, ok := atomTypes[class]
+	if !ok {
+		return fmt.Errorf("invalid content type: %v (%x) (%x)", class, b[1:4], b)
+	}
+
+	// 4: atom version (1 byte) + atom flags (3 bytes)
+	// 4: NULL (usually locale indicator)
+	b = b[8:]
+
+	if name == "trkn" || name == "disk" {
+		fmt.Printf("%#v: %x\n", name, b)
+		m[name] = int(b[3])
+		m[name+"_count"] = int(b[5])
+		return nil
+	}
+
+	var data interface{}
+	switch contentType {
+	case "text":
+		data = string(b)
+
+	case "uint8":
+		data = getInt(b[:1])
+
+	case "jpeg", "png":
+		data = &Picture{
+			Ext:      contentType,
+			MIMEType: "image/" + contentType,
+			Data:     b,
+		}
+	}
+	m[name] = data
+
+	return nil
+}
+
+func readAtomHeader(r io.ReadSeeker) (name string, size uint32, err error) {
+	err = binary.Read(r, binary.BigEndian, &size)
+	if err != nil {
+		return
+	}
+	name, err = readString(r, 4)
+	return
+}
+
+// Generic atom.
+// Should have 3 sub atoms : mean, name and data.
+// We check that mean is "com.apple.iTunes" and we use the subname as
+// the name, and move to the data atom.
+// If anything goes wrong, we jump at the end of the "----" atom.
+func readCustomAtom(r io.ReadSeeker, size uint32) (string, uint32, error) {
+	subNames := make(map[string]string)
+	var dataSize uint32
+
+	for size > 8 {
+		subName, subSize, err := readAtomHeader(r)
+		if err != nil {
+			return "", 0, err
+		}
+
+		// Remove the size of the atom from the size counter
+		size -= subSize
+
+		switch subName {
+		case "mean", "name":
+			b, err := readBytes(r, int(subSize-8))
+			if err != nil {
+				return "", 0, err
+			}
+			subNames[subName] = string(b[4:])
+
+		case "data":
+			// Found the "data" atom, rewind
+			dataSize = subSize + 8 // will need to re-read "data" + size (4 + 4)
+			_, err := r.Seek(-8, os.SEEK_CUR)
+			if err != nil {
+				return "", 0, err
+			}
+		}
+	}
+
+	// there should remain only the header size
+	if size != 8 {
+		err := errors.New("---- atom out of bounds")
+		return "", 0, err
+	}
+
+	if subNames["mean"] != "com.apple.iTunes" || subNames["name"] == "" || dataSize == 0 {
+		return "----", 0, nil
+	}
+	return subNames["name"], dataSize, nil
 }
 
 func (metadataMP4) Format() Format     { return MP4 }
