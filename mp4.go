@@ -141,7 +141,6 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32) err
 	b = b[8:]
 
 	if name == "trkn" || name == "disk" {
-		fmt.Printf("%#v: %x\n", name, b)
 		m[name] = int(b[3])
 		m[name+"_count"] = int(b[5])
 		return nil
