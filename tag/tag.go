@@ -8,14 +8,17 @@ The tag tool reads metadata from media files (as supported by the tag library).
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/dhowden/tag"
+	"github.com/dhowden/tag/mbz"
 )
 
 var raw bool
+var extractMBZ bool
 
 var usage = func() {
 	fmt.Fprintf(os.Stderr, "usage: %s [optional flags] filename\n", os.Args[0])
@@ -24,6 +27,7 @@ var usage = func() {
 
 func init() {
 	flag.BoolVar(&raw, "raw", false, "show raw tag data")
+	flag.BoolVar(&extractMBZ, "mbz", false, "extract MusicBrainz tag data (if available)")
 
 	flag.Usage = usage
 }
@@ -63,6 +67,16 @@ func main() {
 			}
 			fmt.Printf("%#v: %#v\n", k, v)
 		}
+	}
+
+	if extractMBZ {
+		b, err := json.MarshalIndent(mbz.Extract(m), "", "  ")
+		if err != nil {
+			fmt.Printf("error marshalling MusicBrainz info: %v\n", err)
+			return
+		}
+
+		fmt.Printf("\nMusicBrainz Info:\n%v\n", string(b))
 	}
 }
 
