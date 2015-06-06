@@ -13,6 +13,7 @@ import (
 // BlockType is a type which represents an enumeration of valid FLAC blocks
 type BlockType byte
 
+// FLAC block types.
 const (
 	StreamInfoBlock    BlockType = 0
 	PaddingBlock                 = 1

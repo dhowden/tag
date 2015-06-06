@@ -52,6 +52,7 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 // Format is an enumeration of metadata types supported by this package.
 type Format string
 
+// Supported tag formats.
 const (
 	ID3v1   Format = "ID3v1"   // ID3v1 tag format.
 	ID3v2_2        = "ID3v2.2" // ID3v2.2 tag format.
@@ -66,6 +67,7 @@ const (
 // between them.
 type FileType string
 
+// Supported file types.
 const (
 	MP3  FileType = "MP3"  // MP3 file
 	AAC           = "AAC"  // M4A file (MP4)
