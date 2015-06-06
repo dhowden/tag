@@ -17,8 +17,8 @@ const (
 
 // ReadOGGTags reads OGG metadata from the io.ReadSeeker, returning the resulting
 // metadata in a Metadata implementation, or non-nil error if there was a problem.
-// See http://www.xiph.org/vorbis/doc/Vorbis_I_spec.html and http://www.xiph.org/ogg/doc/framing.html for details
-// TODO: Needs a more generic return type than "metadataFLAC" and the "FLAC" format is not as obvious as "Vorbis comment"
+// See http://www.xiph.org/vorbis/doc/Vorbis_I_spec.html
+// and http://www.xiph.org/ogg/doc/framing.html for details.
 func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 	_, err := r.Seek(0, os.SEEK_SET)
 	if err != nil {
