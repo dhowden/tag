@@ -17,15 +17,22 @@ import (
 
 var raw bool
 
+var usage = func() {
+	fmt.Fprintf(os.Stderr, "usage: %s [optional flags] filename\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
 func init() {
 	flag.BoolVar(&raw, "raw", false, "show raw tag data")
+
+	flag.Usage = usage
 }
 
 func main() {
 	flag.Parse()
 
 	if flag.NArg() != 1 {
-		fmt.Printf("usage: %v filename\n", os.Args[0])
+		usage()
 		return
 	}
 
