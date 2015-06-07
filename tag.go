@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package tag provides basic MP3 (ID3v1,2.{2,3,4}) and MP4 metadata parsing.
+// Package tag provides MP3 (ID3: v1, 2.2, 2.3 and 2.4), MP4, FLAC and OGG metadata parsing and
+// artwork extraction.
 package tag
 
 import (
