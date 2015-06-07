@@ -7,7 +7,9 @@ package tag
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"os"
 )
 
 // ErrNoTagsFound is the error returned by ReadFrom when the metadata format
@@ -23,6 +25,11 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 	b, err := readBytes(r, 11)
 	if err != nil {
 		return nil, err
+	}
+
+	_, err = r.Seek(-11, os.SEEK_CUR)
+	if err != nil {
+		return nil, fmt.Errorf("could not seek back to original position: %v", err)
 	}
 
 	switch {

@@ -17,6 +17,11 @@ func Sum(r io.ReadSeeker) (string, error) {
 		return "", err
 	}
 
+	_, err = r.Seek(-11, os.SEEK_CUR)
+	if err != nil {
+		return "", fmt.Errorf("could not seek back to original position: %v", err)
+	}
+
 	if string(b[4:11]) == "ftypM4A" {
 		return SumAtoms(r)
 	}
@@ -35,13 +40,8 @@ func Sum(r io.ReadSeeker) (string, error) {
 	return h, nil
 }
 
-// SumAll returns a checksum of the entire content.
+// SumAll returns a checksum of the content from the reader (until EOF).
 func SumAll(r io.ReadSeeker) (string, error) {
-	_, err := r.Seek(0, os.SEEK_SET)
-	if err != nil {
-		return "", fmt.Errorf("error seeking to 0: %v", err)
-	}
-
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return "", nil
@@ -52,14 +52,6 @@ func SumAll(r io.ReadSeeker) (string, error) {
 // SumAtoms constructs a checksum of MP4 audio file data provided by the io.ReadSeeker which is
 // metadata invariant.
 func SumAtoms(r io.ReadSeeker) (string, error) {
-	_, err := r.Seek(0, os.SEEK_SET)
-	if err != nil {
-		return "", fmt.Errorf("error seeking to 0: %v", err)
-	}
-	return sumAtoms(r)
-}
-
-func sumAtoms(r io.ReadSeeker) (string, error) {
 	for {
 		var size uint32
 		err := binary.Read(r, binary.BigEndian, &size)
@@ -85,7 +77,7 @@ func sumAtoms(r io.ReadSeeker) (string, error) {
 			fallthrough
 
 		case "moov", "udta", "ilst":
-			return sumAtoms(r)
+			return SumAtoms(r)
 
 		case "free":
 			_, err = r.Seek(int64(size-8), os.SEEK_CUR)
@@ -112,11 +104,6 @@ func sumAtoms(r io.ReadSeeker) (string, error) {
 // SumID3v1 constructs a checksum of MP3 audio file data (assumed to have ID3v1 tags) provided
 // by the io.ReadSeeker which is metadata invariant.
 func SumID3v1(r io.ReadSeeker) (string, error) {
-	_, err := r.Seek(0, os.SEEK_SET)
-	if err != nil {
-		return "", fmt.Errorf("error seeking to 0: %v", err)
-	}
-
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return "", err
@@ -131,11 +118,6 @@ func SumID3v1(r io.ReadSeeker) (string, error) {
 // SumID3v2 constructs a checksum of MP3 audio file data (assumed to have ID3v2 tags) provided by the
 // io.ReadSeeker which is metadata invariant.
 func SumID3v2(r io.ReadSeeker) (string, error) {
-	_, err := r.Seek(0, os.SEEK_SET)
-	if err != nil {
-		return "", fmt.Errorf("error seeking to 0: %v", err)
-	}
-
 	h, err := readID3v2Header(r)
 	if err != nil {
 		return "", fmt.Errorf("error reading ID3v2 header: %v", err)

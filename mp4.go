@@ -62,12 +62,8 @@ type metadataMP4 map[string]interface{}
 // ReadAtoms reads MP4 metadata atoms from the io.ReadSeeker into a Metadata, returning
 // non-nil error if there was a problem.
 func ReadAtoms(r io.ReadSeeker) (Metadata, error) {
-	_, err := r.Seek(0, os.SEEK_SET)
-	if err != nil {
-		return nil, err
-	}
 	m := make(metadataMP4)
-	err = m.readAtoms(r)
+	err := m.readAtoms(r)
 	return m, err
 }
 

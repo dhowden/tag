@@ -7,7 +7,6 @@ package tag
 import (
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -302,11 +301,6 @@ func (r *unsynchroniser) Read(p []byte) (int, error) {
 // ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
 // non-nil error on failure.
 func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
-	_, err := r.Seek(0, os.SEEK_SET)
-	if err != nil {
-		return nil, err
-	}
-
 	h, err := readID3v2Header(r)
 	if err != nil {
 		return nil, err
