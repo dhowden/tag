@@ -36,6 +36,7 @@ func main() {
 
 	if itlXML == "" && path == "" || itlXML != "" && path != "" {
 		fmt.Println("you must specify one of -itlXML or -path")
+		flag.Usage()
 		os.Exit(1)
 	}
 
