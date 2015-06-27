@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
 )
 
 // ID3v2Header is a type which represents an ID3v2 tag header.
@@ -198,11 +197,6 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 		b, err := readBytes(r, size)
 		if err != nil {
 			return nil, err
-		}
-
-		name = strings.TrimSpace(name)
-		if name == "" {
-			break
 		}
 
 		// There can be multiple tag with the same name. Append a number to the
