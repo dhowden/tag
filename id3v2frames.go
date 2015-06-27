@@ -179,6 +179,10 @@ func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error)
 	}
 	c.Description = desc
 
+	if len(descTextSplit) == 1 {
+		return c, nil
+	}
+
 	if !encoded {
 		enc = byte(0)
 	}
