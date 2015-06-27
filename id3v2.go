@@ -265,11 +265,10 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 				return nil, err
 			}
 			result[rawName] = p
+
 		default:
 			result[rawName] = b
 		}
-
-		continue
 	}
 	return result, nil
 }
