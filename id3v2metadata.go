@@ -42,7 +42,7 @@ var frames = frameNames(map[string][2]string{
 
 // metadataID3v2 is the implementation of Metadata used for ID3v2 tags.
 type metadataID3v2 struct {
-	header *ID3v2Header
+	header *id3v2Header
 	frames map[string]interface{}
 }
 

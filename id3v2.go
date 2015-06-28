@@ -10,8 +10,8 @@ import (
 	"strconv"
 )
 
-// ID3v2Header is a type which represents an ID3v2 tag header.
-type ID3v2Header struct {
+// id3v2Header is a type which represents an ID3v2 tag header.
+type id3v2Header struct {
 	Version           Format
 	Unsynchronisation bool
 	ExtendedHeader    bool
@@ -20,7 +20,7 @@ type ID3v2Header struct {
 }
 
 // readID3v2Header reads the ID3v2 header from the given io.Reader.
-func readID3v2Header(r io.Reader) (*ID3v2Header, error) {
+func readID3v2Header(r io.Reader) (*id3v2Header, error) {
 	b, err := readBytes(r, 10)
 	if err != nil {
 		return nil, fmt.Errorf("expected to read 10 bytes (ID3v2Header): %v", err)
@@ -46,7 +46,7 @@ func readID3v2Header(r io.Reader) (*ID3v2Header, error) {
 	}
 
 	// NB: We ignore b[1] (the revision) as we don't currently rely on it.
-	return &ID3v2Header{
+	return &id3v2Header{
 		Version:           vers,
 		Unsynchronisation: getBit(b[2], 7),
 		ExtendedHeader:    getBit(b[2], 6),
@@ -55,8 +55,8 @@ func readID3v2Header(r io.Reader) (*ID3v2Header, error) {
 	}, nil
 }
 
-// ID3v2FrameFlags is a type which represents the flags which can be set on an ID3v2 frame.
-type ID3v2FrameFlags struct {
+// id3v2FrameFlags is a type which represents the flags which can be set on an ID3v2 frame.
+type id3v2FrameFlags struct {
 	// Message (ID3 2.3.0 and 2.4.0)
 	TagAlterPreservation  bool
 	FileAlterPreservation bool
@@ -71,7 +71,7 @@ type ID3v2FrameFlags struct {
 	DataLengthIndicator bool
 }
 
-func readID3v23FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
+func readID3v23FrameFlags(r io.Reader) (*id3v2FrameFlags, error) {
 	b, err := readBytes(r, 2)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func readID3v23FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
 	msg := b[0]
 	fmt := b[1]
 
-	return &ID3v2FrameFlags{
+	return &id3v2FrameFlags{
 		TagAlterPreservation:  getBit(msg, 7),
 		FileAlterPreservation: getBit(msg, 6),
 		ReadOnly:              getBit(msg, 5),
@@ -90,7 +90,7 @@ func readID3v23FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
 	}, nil
 }
 
-func readID3v24FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
+func readID3v24FrameFlags(r io.Reader) (*id3v2FrameFlags, error) {
 	b, err := readBytes(r, 2)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func readID3v24FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
 	msg := b[0]
 	fmt := b[1]
 
-	return &ID3v2FrameFlags{
+	return &id3v2FrameFlags{
 		TagAlterPreservation:  getBit(msg, 6),
 		FileAlterPreservation: getBit(msg, 5),
 		ReadOnly:              getBit(msg, 4),
@@ -152,7 +152,7 @@ func readID3v2_4FrameHeader(r io.Reader) (name string, size int, headerSize int,
 }
 
 // readID3v2Frames reads ID3v2 frames from the given reader using the ID3v2Header.
-func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error) {
+func readID3v2Frames(r io.Reader, h *id3v2Header) (map[string]interface{}, error) {
 	offset := 10 // the size of the header
 	result := make(map[string]interface{})
 
@@ -160,7 +160,7 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 		var err error
 		var name string
 		var size, headerSize int
-		var flags *ID3v2FrameFlags
+		var flags *id3v2FrameFlags
 
 		switch h.Version {
 		case ID3v2_2:
