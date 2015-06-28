@@ -57,20 +57,40 @@ func readID3v2Header(r io.Reader) (*ID3v2Header, error) {
 
 // ID3v2FrameFlags is a type which represents the flags which can be set on an ID3v2 frame.
 type ID3v2FrameFlags struct {
-	// Message
+	// Message (ID3 2.3.0 and 2.4.0)
 	TagAlterPreservation  bool
 	FileAlterPreservation bool
 	ReadOnly              bool
 
-	// Format
-	GroupIdentity       bool
-	Compression         bool
-	Encryption          bool
+	// Format (ID3 2.3.0 and 2.4.0)
+	Compression   bool
+	Encryption    bool
+	GroupIdentity bool
+	// ID3 2.4.0 only (see http://id3.org/id3v2.4.0-structure sec 4.1)
 	Unsynchronisation   bool
 	DataLengthIndicator bool
 }
 
-func readID3v2FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
+func readID3v23FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
+	b, err := readBytes(r, 2)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := b[0]
+	fmt := b[1]
+
+	return &ID3v2FrameFlags{
+		TagAlterPreservation:  getBit(msg, 7),
+		FileAlterPreservation: getBit(msg, 6),
+		ReadOnly:              getBit(msg, 5),
+		Compression:           getBit(fmt, 7),
+		Encryption:            getBit(fmt, 6),
+		GroupIdentity:         getBit(fmt, 5),
+	}, nil
+}
+
+func readID3v24FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
 	b, err := readBytes(r, 2)
 	if err != nil {
 		return nil, err
@@ -83,12 +103,13 @@ func readID3v2FrameFlags(r io.Reader) (*ID3v2FrameFlags, error) {
 		TagAlterPreservation:  getBit(msg, 6),
 		FileAlterPreservation: getBit(msg, 5),
 		ReadOnly:              getBit(msg, 4),
-		GroupIdentity:         getBit(fmt, 7),
+		GroupIdentity:         getBit(fmt, 6),
 		Compression:           getBit(fmt, 3),
 		Encryption:            getBit(fmt, 2),
 		Unsynchronisation:     getBit(fmt, 1),
 		DataLengthIndicator:   getBit(fmt, 0),
 	}, nil
+
 }
 
 func readID3v2_2FrameHeader(r io.Reader) (name string, size int, headerSize int, err error) {
@@ -150,7 +171,7 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			if err != nil {
 				return nil, err
 			}
-			flags, err = readID3v2FrameFlags(r)
+			flags, err = readID3v23FrameFlags(r)
 			headerSize += 2
 
 		case ID3v2_4:
@@ -158,7 +179,7 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 			if err != nil {
 				return nil, err
 			}
-			flags, err = readID3v2FrameFlags(r)
+			flags, err = readID3v24FrameFlags(r)
 			headerSize += 2
 		}
 
@@ -180,18 +201,22 @@ func readID3v2Frames(r io.Reader, h *ID3v2Header) (map[string]interface{}, error
 
 		offset += headerSize + size
 
-		// Check this stuff out...
-		if flags != nil && flags.DataLengthIndicator {
-			_, err = read7BitChunkedInt(r, 4) // read 4
-			if err != nil {
-				return nil, err
+		if flags != nil {
+			if flags.Compression {
+				_, err = read7BitChunkedInt(r, 4) // read 4
+				if err != nil {
+					return nil, err
+				}
+				size -= 4
 			}
-			size -= 4
-		}
 
-		if flags != nil && flags.Unsynchronisation {
-			// FIXME: Implement this.
-			continue
+			if flags.Encryption {
+				_, err = readBytes(r, 1) // read 1 byte of encryption method
+				if err != nil {
+					return nil, err
+				}
+				size -= 1
+			}
 		}
 
 		b, err := readBytes(r, size)
