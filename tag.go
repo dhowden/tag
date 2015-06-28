@@ -4,7 +4,7 @@
 
 // Package tag provides MP3 (ID3: v1, 2.2, 2.3 and 2.4), MP4, FLAC and OGG metadata detection,
 // parsing and artwork extraction.
-
+//
 // Detect and parse tag metadata from an io.ReadSeeker (i.e. an *os.File):
 // 	m, err := tag.ReadFrom(f)
 // 	if err != nil {
