@@ -1,3 +1,10 @@
+// Copyright 2015, David Howden
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+/*
+The check tool performs tag lookups on full music collections (iTunes or directory tree of files).
+*/
 package main
 
 import (
