@@ -4,6 +4,15 @@
 
 This package provides MP3 (ID3v1,2.{2,3,4}) and MP4 (ACC, M4A, ALAC), OGG and FLAC metadata detection, parsing and artwork extraction.
 
+Detect and parse tag metadata from an `io.ReadSeeker` (i.e. an `*os.File`):
+
+    m, err := tag.ReadFrom(f)
+    if err != nil {
+    	log.Fatal(err)
+    }
+    log.Print(m.Format()) // The detected format.
+    log.Print(m.Title())  // The title of the track (see Metadata interface for more details).
+
 Parsed metadata is exported via a single interface (giving a consistent API for all supported metadata formats).
 
     // Metadata is an interface which is used to describe metadata retrieved by this package.
@@ -35,9 +44,9 @@ construct the checksum.
 
 [http://godoc.org/github.com/dhowden/tag#Sum](http://godoc.org/github.com/dhowden/tag#Sum)
 
-## Example Usage
+## Tools
 
-There are a simple command-line tools which demonstrate basic tag extraction and summing:
+There are simple command-line tools which demonstrate basic tag extraction and summing:
 
     $ go get github.com/dhowden/tag/...
     $ cd $GOPATH/bin
