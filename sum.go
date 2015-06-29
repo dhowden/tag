@@ -70,7 +70,7 @@ func SumAtoms(r io.ReadSeeker) (string, error) {
 		switch name {
 		case "meta":
 			// next_item_id (int32)
-			_, err := readBytes(r, 4)
+			_, err := r.Seek(4, os.SEEK_CUR)
 			if err != nil {
 				return "", err
 			}
