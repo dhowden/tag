@@ -4,8 +4,8 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 	"fmt"
+	"hash"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
@@ -42,11 +42,12 @@ func Sum(r io.ReadSeeker) (string, error) {
 
 // SumAll returns a checksum of the content from the reader (until EOF).
 func SumAll(r io.ReadSeeker) (string, error) {
-	b, err := ioutil.ReadAll(r)
+	h := sha1.New()
+	_, err := io.Copy(h, r)
 	if err != nil {
 		return "", nil
 	}
-	return sum(b), nil
+	return hashSum(h), nil
 }
 
 // SumAtoms constructs a checksum of MP4 audio file data provided by the io.ReadSeeker which is
@@ -80,11 +81,12 @@ func SumAtoms(r io.ReadSeeker) (string, error) {
 			return SumAtoms(r)
 
 		case "mdat": // stop when we get to the data
-			b, err := readBytes(r, int(size-8))
+			h := sha1.New()
+			_, err := io.CopyN(h, r, int64(size-8))
 			if err != nil {
 				return "", fmt.Errorf("error reading audio data: %v", err)
 			}
-			return sum(b), nil
+			return hashSum(h), nil
 		}
 
 		_, err = r.Seek(int64(size-8), os.SEEK_CUR)
@@ -97,41 +99,69 @@ func SumAtoms(r io.ReadSeeker) (string, error) {
 // SumID3v1 constructs a checksum of MP3 audio file data (assumed to have ID3v1 tags) provided
 // by the io.ReadSeeker which is metadata invariant.
 func SumID3v1(r io.ReadSeeker) (string, error) {
-	b, err := ioutil.ReadAll(r)
+	// Need to stop before we hit potential ID3v1 data.
+	n, err := r.Seek(-128, os.SEEK_END)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error seeking to the end of the file (minus ID3v1 header): %v", err)
 	}
 
-	if len(b) < 128 {
-		return "", fmt.Errorf("file size must be greater than 128 bytes for ID3v1 metadata (size: %v)", len(b))
+	// TODO: improve this check???
+	if n <= 0 {
+		return "", fmt.Errorf("file size must be greater than 128 bytes (ID3v1 header size) for MP3")
 	}
-	return sum(b[:len(b)-128]), nil
+
+	// Seek back to the original position now!
+	_, err = r.Seek(-1*n, os.SEEK_SET)
+	if err != nil {
+		return "", fmt.Errorf("error seeking back to the start of the data: %v", err)
+	}
+
+	h := sha1.New()
+	_, err = io.CopyN(h, r, n)
+	if err != nil {
+		return "", fmt.Errorf("error reading %v bytes: %v", n, err)
+	}
+	return hashSum(h), nil
 }
 
 // SumID3v2 constructs a checksum of MP3 audio file data (assumed to have ID3v2 tags) provided by the
 // io.ReadSeeker which is metadata invariant.
 func SumID3v2(r io.ReadSeeker) (string, error) {
-	h, err := readID3v2Header(r)
+	header, err := readID3v2Header(r)
 	if err != nil {
 		return "", fmt.Errorf("error reading ID3v2 header: %v", err)
 	}
 
-	_, err = r.Seek(int64(h.Size)+10, os.SEEK_SET)
+	_, err = r.Seek(int64(header.Size)+10, os.SEEK_SET)
 	if err != nil {
 		return "", fmt.Errorf("error seeking to end of ID3V2 header: %v", err)
 	}
 
-	b, err := ioutil.ReadAll(r)
+	// Need to stop before we hit potential ID3v1 data.
+	n, err := r.Seek(-128, os.SEEK_END)
 	if err != nil {
-		return "", fmt.Errorf("error reading audio data: %v", err)
+		return "", fmt.Errorf("error seeking to the end of the file (minus ID3v1 header): %v", err)
 	}
 
-	if len(b) < 128 {
-		return "", fmt.Errorf("file size must be greater than 128 bytes for MP3 (ID3v2 header size: %d, remaining: %d)", h.Size, len(b))
+	// TODO: remove this check?????
+	if n < 0 {
+		return "", fmt.Errorf("file size must be greater than 128 bytes for MP3: %v bytes", n)
 	}
-	return sum(b[:len(b)-128]), nil
+
+	// Seek back to the original position now!
+	_, err = r.Seek(-1*n, os.SEEK_SET)
+	if err != nil {
+		return "", fmt.Errorf("error seeking back to the start of the data: %v", err)
+	}
+
+	h := sha1.New()
+	_, err = io.CopyN(h, r, n)
+	if err != nil {
+		return "", fmt.Errorf("error reading %v bytes: %v", n, err)
+	}
+	return hashSum(h), nil
 }
 
-func sum(b []byte) string {
-	return fmt.Sprintf("%x", sha1.Sum(b))
+func hashSum(h hash.Hash) string {
+	return fmt.Sprintf("%x", h.Sum([]byte{}))
 }
