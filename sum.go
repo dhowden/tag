@@ -79,13 +79,6 @@ func SumAtoms(r io.ReadSeeker) (string, error) {
 		case "moov", "udta", "ilst":
 			return SumAtoms(r)
 
-		case "free":
-			_, err = r.Seek(int64(size-8), os.SEEK_CUR)
-			if err != nil {
-				return "", fmt.Errorf("error reading 'free' space: %v", err)
-			}
-			continue
-
 		case "mdat": // stop when we get to the data
 			b, err := readBytes(r, int(size-8))
 			if err != nil {
