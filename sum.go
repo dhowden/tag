@@ -78,7 +78,7 @@ func SumAtoms(r io.ReadSeeker) (string, error) {
 			fallthrough
 
 		case "moov", "udta", "ilst":
-			return SumAtoms(r)
+			continue
 
 		case "mdat": // stop when we get to the data
 			h := sha1.New()
