@@ -96,24 +96,30 @@ func SumAtoms(r io.ReadSeeker) (string, error) {
 	}
 }
 
+func sizeToEndOffset(r io.ReadSeeker, offset int64) (int64, error) {
+	n, err := r.Seek(-128, os.SEEK_END)
+	if err != nil {
+		return 0, fmt.Errorf("error seeking end offset (%d bytes): %v", offset, err)
+	}
+
+	_, err = r.Seek(-n, os.SEEK_CUR)
+	if err != nil {
+		return 0, fmt.Errorf("error seeking back to original position: %v", err)
+	}
+	return n, nil
+}
+
 // SumID3v1 constructs a checksum of MP3 audio file data (assumed to have ID3v1 tags) provided
 // by the io.ReadSeeker which is metadata invariant.
 func SumID3v1(r io.ReadSeeker) (string, error) {
-	// Need to stop before we hit potential ID3v1 data.
-	n, err := r.Seek(-128, os.SEEK_END)
+	n, err := sizeToEndOffset(r, 128)
 	if err != nil {
-		return "", fmt.Errorf("error seeking to the end of the file (minus ID3v1 header): %v", err)
+		return "", fmt.Errorf("error determining read size to ID3v1 header: %v", err)
 	}
 
 	// TODO: improve this check???
 	if n <= 0 {
 		return "", fmt.Errorf("file size must be greater than 128 bytes (ID3v1 header size) for MP3")
-	}
-
-	// Seek back to the original position now!
-	_, err = r.Seek(-1*n, os.SEEK_SET)
-	if err != nil {
-		return "", fmt.Errorf("error seeking back to the start of the data: %v", err)
 	}
 
 	h := sha1.New()
@@ -137,21 +143,14 @@ func SumID3v2(r io.ReadSeeker) (string, error) {
 		return "", fmt.Errorf("error seeking to end of ID3V2 header: %v", err)
 	}
 
-	// Need to stop before we hit potential ID3v1 data.
-	n, err := r.Seek(-128, os.SEEK_END)
+	n, err := sizeToEndOffset(r, 128)
 	if err != nil {
-		return "", fmt.Errorf("error seeking to the end of the file (minus ID3v1 header): %v", err)
+		return "", fmt.Errorf("error determining read size to ID3v1 header: %v", err)
 	}
 
 	// TODO: remove this check?????
 	if n < 0 {
 		return "", fmt.Errorf("file size must be greater than 128 bytes for MP3: %v bytes", n)
-	}
-
-	// Seek back to the original position now!
-	_, err = r.Seek(-1*n, os.SEEK_SET)
-	if err != nil {
-		return "", fmt.Errorf("error seeking back to the start of the data: %v", err)
 	}
 
 	h := sha1.New()
