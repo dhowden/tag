@@ -68,12 +68,13 @@ type Format string
 
 // Supported tag formats.
 const (
-	ID3v1   Format = "ID3v1"   // ID3v1 tag format.
-	ID3v2_2        = "ID3v2.2" // ID3v2.2 tag format.
-	ID3v2_3        = "ID3v2.3" // ID3v2.3 tag format (most common).
-	ID3v2_4        = "ID3v2.4" // ID3v2.4 tag format.
-	MP4            = "MP4"     // MP4 tag (atom) format.
-	VORBIS         = "VORBIS"  // Vorbis Comment tag format.
+	UnknownFormat Format = ""        // Unknown Format.
+	ID3v1                = "ID3v1"   // ID3v1 tag format.
+	ID3v2_2              = "ID3v2.2" // ID3v2.2 tag format.
+	ID3v2_3              = "ID3v2.3" // ID3v2.3 tag format (most common).
+	ID3v2_4              = "ID3v2.4" // ID3v2.4 tag format.
+	MP4                  = "MP4"     // MP4 tag (atom) format.
+	VORBIS               = "VORBIS"  // Vorbis Comment tag format.
 )
 
 // FileType is an enumeration of the audio file types supported by this package, in particular
@@ -83,11 +84,12 @@ type FileType string
 
 // Supported file types.
 const (
-	MP3  FileType = "MP3"  // MP3 file
-	AAC           = "AAC"  // M4A file (MP4)
-	ALAC          = "ALAC" // Apple Lossless file FIXME: actually detect this
-	FLAC          = "FLAC" // FLAC file
-	OGG           = "OGG"  // OGG file
+	UnknownFileType FileType = ""     // Unknown FileType.
+	MP3                      = "MP3"  // MP3 file
+	AAC                      = "AAC"  // M4A file (MP4)
+	ALAC                     = "ALAC" // Apple Lossless file FIXME: actually detect this
+	FLAC                     = "FLAC" // FLAC file
+	OGG                      = "OGG"  // OGG file
 )
 
 // Metadata is an interface which is used to describe metadata retrieved by this package.
