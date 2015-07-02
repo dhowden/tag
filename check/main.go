@@ -166,6 +166,11 @@ func (p *processor) do(ch <-chan string) {
 			}
 			defer tf.Close()
 
+			_, _, err = tag.Identify(tf)
+			if err != nil {
+				fmt.Println("IDENTIFY:", path, err.Error())
+			}
+
 			_, err = tag.ReadFrom(tf)
 			if err != nil {
 				fmt.Println("READFROM:", path, err.Error())
