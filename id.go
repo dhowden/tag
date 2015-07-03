@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-// Identify reads from the given ReadSeaker and
+// Identify identifies the format and file type of the data in the ReadSeeker.
 func Identify(r io.ReadSeeker) (format Format, fileType FileType, err error) {
 	b, err := readBytes(r, 11)
 	if err != nil {
