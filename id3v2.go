@@ -7,8 +7,40 @@ package tag
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"strconv"
+	"strings"
 )
+
+var id3v2Genres = [...]string{
+	"Blues", "Classic Rock", "Country", "Dance", "Disco", "Funk", "Grunge",
+	"Hip-Hop", "Jazz", "Metal", "New Age", "Oldies", "Other", "Pop", "R&B",
+	"Rap", "Reggae", "Rock", "Techno", "Industrial", "Alternative", "Ska",
+	"Death Metal", "Pranks", "Soundtrack", "Euro-Techno", "Ambient",
+	"Trip-Hop", "Vocal", "Jazz+Funk", "Fusion", "Trance", "Classical",
+	"Instrumental", "Acid", "House", "Game", "Sound Clip", "Gospel",
+	"Noise", "AlternRock", "Bass", "Soul", "Punk", "Space", "Meditative",
+	"Instrumental Pop", "Instrumental Rock", "Ethnic", "Gothic",
+	"Darkwave", "Techno-Industrial", "Electronic", "Pop-Folk",
+	"Eurodance", "Dream", "Southern Rock", "Comedy", "Cult", "Gangsta",
+	"Top 40", "Christian Rap", "Pop/Funk", "Jungle", "Native American",
+	"Cabaret", "New Wave", "Psychedelic", "Rave", "Showtunes", "Trailer",
+	"Lo-Fi", "Tribal", "Acid Punk", "Acid Jazz", "Polka", "Retro",
+	"Musical", "Rock & Roll", "Hard Rock", "Folk", "Folk-Rock",
+	"National Folk", "Swing", "Fast Fusion", "Bebob", "Latin", "Revival",
+	"Celtic", "Bluegrass", "Avantgarde", "Gothic Rock", "Progressive Rock",
+	"Psychedelic Rock", "Symphonic Rock", "Slow Rock", "Big Band",
+	"Chorus", "Easy Listening", "Acoustic", "Humour", "Speech", "Chanson",
+	"Opera", "Chamber Music", "Sonata", "Symphony", "Booty Bass", "Primus",
+	"Porn Groove", "Satire", "Slow Jam", "Club", "Tango", "Samba",
+	"Folklore", "Ballad", "Power Ballad", "Rhythmic Soul", "Freestyle",
+	"Duet", "Punk Rock", "Drum Solo", "A capella", "Euro-House", "Dance Hall",
+	"Goa", "Drum & Bass", "Club-House", "Hardcore", "Terror", "Indie",
+	"Britpop", "Negerpunk", "Polsk Punk", "Beat", "Christian Gangsta Rap",
+	"Heavy Metal", "Black Metal", "Crossover", "Contemporary Christian",
+	"Christian Rock ", "Merengue", "Salsa", "Thrash Metal", "Anime", "JPop",
+	"Synthpop",
+}
 
 // id3v2Header is a type which represents an ID3v2 tag header.
 type id3v2Header struct {
@@ -341,4 +373,28 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 	return metadataID3v2{header: h, frames: f}, nil
+}
+
+//  id3v2genre parse a id3v2 genre tag and expand the numeric genres
+func id3v2genre(genre string) string {
+	c := true
+	for c {
+		orig := genre
+		re := regexp.MustCompile("(.*[^(]|.* |^)\\(([0-9]+)\\) *(.*)$")
+		if match := re.FindStringSubmatch(genre); len(match) > 0 {
+			if genreId, err := strconv.Atoi(match[2]); err == nil {
+				if genreId < len(id3v2Genres) {
+					genre = id3v2Genres[genreId]
+					if match[1] != "" {
+						genre = strings.TrimSpace(match[1]) + " " + genre
+					}
+					if match[3] != "" {
+						genre = genre + " " + match[3]
+					}
+				}
+			}
+		}
+		c = (orig != genre)
+	}
+	return strings.Replace(genre, "((", "(", -1)
 }

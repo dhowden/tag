@@ -87,7 +87,7 @@ func (m metadataID3v2) Composer() string {
 }
 
 func (m metadataID3v2) Genre() string {
-	return m.getString(frames.Name("genre", m.Format()))
+	return id3v2genre(m.getString(frames.Name("genre", m.Format())))
 }
 
 func (m metadataID3v2) Year() int {
