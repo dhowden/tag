@@ -129,3 +129,24 @@ func TestUnsynchroniserSplitReads(t *testing.T) {
 		}
 	}
 }
+
+func TestGenreExpension(t *testing.T) {
+	var tests = map[string]string{
+		"Test":         "Test",
+		"((17)":        "(17)",
+		"(17) Test":    "Rock Test",
+		"(17)Test":     "Rock Test",
+		"(17)":         "Rock",
+		"Test(17)":     "Test Rock",
+		"Test (17)":    "Test Rock",
+		"(17)(93)":     "Rock Psychedelic Rock",
+		"(17)Test(93)": "Rock Test Psychedelic Rock",
+	}
+	for g, r := range tests {
+		got := id3v2genre(g)
+
+		if got != r {
+			t.Errorf("[%v] got: %v, expected %v", g, got, r)
+		}
+	}
+}
