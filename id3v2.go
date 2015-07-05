@@ -219,11 +219,6 @@ func readID3v2Frames(r io.Reader, h *id3v2Header) (map[string]interface{}, error
 			return nil, err
 		}
 
-		// Avoid corrupted padding (see http://id3.org/Compliance%20Issues).
-		if !validID3Frame(h.Version, name) {
-			break
-		}
-
 		// FIXME: Do we still need this?
 		// if size=0, we certainly are in a padding zone. ignore the rest of
 		// the tags
@@ -232,6 +227,11 @@ func readID3v2Frames(r io.Reader, h *id3v2Header) (map[string]interface{}, error
 		}
 
 		offset += headerSize + size
+
+		// Avoid corrupted padding (see http://id3.org/Compliance%20Issues).
+		if !validID3Frame(h.Version, name) && offset > h.Size {
+			break
+		}
 
 		if flags != nil {
 			if flags.Compression {
