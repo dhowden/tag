@@ -23,15 +23,14 @@ func Sum(r io.ReadSeeker) (string, error) {
 		return "", fmt.Errorf("could not seek back to original position: %v", err)
 	}
 
-	if string(b[0:4]) == "fLaC" {
+	switch {
+	case string(b[0:4]) == "fLaC":
 		return SumFLAC(r)
-	}
 
-	if string(b[4:11]) == "ftypM4A" {
+	case string(b[4:11]) == "ftypM4A":
 		return SumAtoms(r)
-	}
 
-	if string(b[0:3]) == "ID3" {
+	case string(b[0:3]) == "ID3":
 		return SumID3v2(r)
 	}
 
