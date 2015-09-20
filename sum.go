@@ -3,6 +3,7 @@ package tag
 import (
 	"crypto/sha1"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -20,6 +21,10 @@ func Sum(r io.ReadSeeker) (string, error) {
 	_, err = r.Seek(-11, os.SEEK_CUR)
 	if err != nil {
 		return "", fmt.Errorf("could not seek back to original position: %v", err)
+	}
+
+	if string(b[0:4]) == "fLaC" {
+		return SumFLAC(r)
 	}
 
 	if string(b[4:11]) == "ftypM4A" {
@@ -159,6 +164,56 @@ func SumID3v2(r io.ReadSeeker) (string, error) {
 		return "", fmt.Errorf("error reading %v bytes: %v", n, err)
 	}
 	return hashSum(h), nil
+}
+
+// SumFLAC costructs a checksum of the FLAC audio file data provided by the io.ReadSeeker (ignores
+// metadata fields).
+func SumFLAC(r io.ReadSeeker) (string, error) {
+	flac, err := readString(r, 4)
+	if err != nil {
+		return "", err
+	}
+	if flac != "fLaC" {
+		return "", errors.New("expected 'fLaC'")
+	}
+
+	for {
+		last, err := skipFLACMetadataBlock(r)
+		if err != nil {
+			return "", err
+		}
+
+		if last {
+			break
+		}
+	}
+
+	h := sha1.New()
+	_, err = io.Copy(h, r)
+	if err != nil {
+		return "", fmt.Errorf("error reading data bytes from FLAC: %v", err)
+	}
+	return hashSum(h), nil
+}
+
+func skipFLACMetadataBlock(r io.ReadSeeker) (last bool, err error) {
+	blockHeader, err := readBytes(r, 1)
+	if err != nil {
+		return
+	}
+
+	if getBit(blockHeader[0], 7) {
+		blockHeader[0] ^= (1 << 7)
+		last = true
+	}
+
+	blockLen, err := readInt(r, 3)
+	if err != nil {
+		return
+	}
+
+	_, err = r.Seek(int64(blockLen), os.SEEK_CUR)
+	return
 }
 
 func hashSum(h hash.Hash) string {
