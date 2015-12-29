@@ -46,7 +46,7 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 	case string(b[0:4]) == "OggS":
 		return ReadOGGTags(r)
 
-	case string(b[4:11]) == "ftypM4A":
+	case string(b[4:8]) == "ftyp":
 		return ReadAtoms(r)
 
 	case string(b[0:3]) == "ID3":
