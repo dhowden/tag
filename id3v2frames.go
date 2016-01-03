@@ -326,7 +326,7 @@ func decodeText(enc byte, b []byte) (string, error) {
 		if len(b) == 1 {
 			return "", nil
 		}
-		return decodeUTF16WithBOM(b)
+		return decodeUTF16WithBOM(b), nil
 
 	case 2: // UTF-16 without byte order (assuming BigEndian)
 		if len(b) == 1 {
@@ -383,19 +383,21 @@ func decodeISO8859(b []byte) string {
 	return string(r)
 }
 
-func decodeUTF16WithBOM(b []byte) (string, error) {
+func decodeUTF16WithBOM(b []byte) string {
 	var bo binary.ByteOrder
 	switch {
 	case b[0] == 0xFE && b[1] == 0xFF:
 		bo = binary.BigEndian
+		b = b[2:]
 
 	case b[0] == 0xFF && b[1] == 0xFE:
 		bo = binary.LittleEndian
+		b = b[2:]
 
 	default:
-		return decodeUTF16(b, DefaultUTF16WithBOMByteOrder), nil
+		bo = DefaultUTF16WithBOMByteOrder
 	}
-	return decodeUTF16(b[2:], bo), nil
+	return decodeUTF16(b, bo)
 }
 
 func decodeUTF16(b []byte, bo binary.ByteOrder) string {
