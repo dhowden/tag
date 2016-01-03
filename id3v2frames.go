@@ -13,6 +13,10 @@ import (
 	"unicode/utf16"
 )
 
+// DefaultUTF16WithBOMByteOrder is the byte order used when the "UTF16 with BOM" encoding
+// is specified without a corresponding BOM in the data.
+var DefaultUTF16WithBOMByteOrder binary.ByteOrder = binary.LittleEndian
+
 // ID3v2.2.0 frames (see http://id3.org/id3v2-00, sec 4).
 var id3v22Frames = map[string]string{
 	"BUF": "Recommended buffer size",
@@ -389,7 +393,7 @@ func decodeUTF16WithBOM(b []byte) (string, error) {
 		bo = binary.LittleEndian
 
 	default:
-		return "", fmt.Errorf("invalid byte order marker %x %x", b[0], b[1])
+		return decodeUTF16(b, DefaultUTF16WithBOMByteOrder), nil
 	}
 	return decodeUTF16(b[2:], bo), nil
 }
