@@ -73,7 +73,7 @@ const (
 	ID3v2_2              = "ID3v2.2" // ID3v2.2 tag format.
 	ID3v2_3              = "ID3v2.3" // ID3v2.3 tag format (most common).
 	ID3v2_4              = "ID3v2.4" // ID3v2.4 tag format.
-	MP4                  = "MP4"     // MP4 tag (atom) format.
+	MP4                  = "MP4"     // MP4 tag (atom) format (see http://www.ftyps.com/ for a full file type list)
 	VORBIS               = "VORBIS"  // Vorbis Comment tag format.
 )
 
@@ -86,7 +86,9 @@ type FileType string
 const (
 	UnknownFileType FileType = ""     // Unknown FileType.
 	MP3                      = "MP3"  // MP3 file
-	AAC                      = "AAC"  // M4A file (MP4)
+	M4A                      = "M4A"  // M4A file Apple iTunes (ACC) Audio
+	M4B                      = "M4B"  // M4A file Apple iTunes (ACC) Audio Book
+	M4P                      = "M4P"  // M4A file Apple iTunes (ACC) AES Protected Audio
 	ALAC                     = "ALAC" // Apple Lossless file FIXME: actually detect this
 	FLAC                     = "FLAC" // FLAC file
 	OGG                      = "OGG"  // OGG file
