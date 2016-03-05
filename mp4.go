@@ -310,5 +310,6 @@ func (m metadataMP4) Picture() *Picture {
 	if !ok {
 		return nil
 	}
-	return v.(*Picture)
+	p, _ := v.(*Picture)
+	return p
 }
