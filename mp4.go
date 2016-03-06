@@ -5,6 +5,7 @@
 package tag
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 )
 
 var atomTypes = map[int]string{
-	0:  "uint8",
+	0:  "implicit", // automatic based on atom name
 	1:  "text",
 	13: "jpeg",
 	14: "png",
@@ -44,6 +45,9 @@ var atoms = atomNames(map[string]string{
 	"disk":    "disc",
 })
 
+// Detect PNG image if "implicit" class is used
+var pngHeader = []byte{137, 80, 78, 71, 13, 10, 26, 10}
+
 type atomNames map[string]string
 
 func (f atomNames) Name(n string) []string {
@@ -66,7 +70,7 @@ type metadataMP4 struct {
 // non-nil error if there was a problem.
 func ReadAtoms(r io.ReadSeeker) (Metadata, error) {
 	m := metadataMP4{
-		data: make(map[string]interface{}),
+		data:     make(map[string]interface{}),
 		fileType: UnknownFileType,
 	}
 	err := m.readAtoms(r)
@@ -148,8 +152,23 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32) err
 		return nil
 	}
 
+	if contentType == "implicit" {
+		if name == "covr" {
+			if bytes.HasPrefix(b, pngHeader) {
+				contentType = "png"
+			}
+			// TODO(dhowden): Detect JPEG formats too (harder).
+		}
+	}
+
 	var data interface{}
 	switch contentType {
+	case "implicit":
+		if _, ok := atoms[name]; ok {
+			return fmt.Errorf("unhandled implicit content type for required atom: %q", name)
+		}
+		return nil
+
 	case "text":
 		data = string(b)
 
@@ -225,7 +244,7 @@ func readCustomAtom(r io.ReadSeeker, size uint32) (string, uint32, error) {
 	return subNames["name"], dataSize, nil
 }
 
-func (metadataMP4) Format() Format     { return MP4 }
+func (metadataMP4) Format() Format       { return MP4 }
 func (m metadataMP4) FileType() FileType { return m.fileType }
 
 func (m metadataMP4) Raw() map[string]interface{} { return m.data }
