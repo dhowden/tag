@@ -117,7 +117,7 @@ func walkLibrary(path string) (<-chan string, error) {
 			loc, err := decodeLocation(t.Location)
 			if err != nil {
 				fmt.Println(err)
-				break
+				continue
 			}
 			paths <- loc
 		}
