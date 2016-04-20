@@ -177,8 +177,9 @@ func (m *metadataVorbis) Album() string {
 }
 
 func (m *metadataVorbis) AlbumArtist() string {
-	// This field isn't included in the standard.
-	return ""
+	// This field isn't actually included in the standard, though
+	// it is commonly assigned to albumartist.
+	return m.c["albumartist"]
 }
 
 func (m *metadataVorbis) Composer() string {
