@@ -52,14 +52,16 @@ type id3v2Header struct {
 }
 
 // readID3v2Header reads the ID3v2 header from the given io.Reader.
-func readID3v2Header(r io.Reader) (*id3v2Header, error) {
-	b, err := readBytes(r, 10)
+// offset it number of bytes of header that was read
+func readID3v2Header(r io.Reader) (h *id3v2Header, offset int, err error) {
+	offset = 10
+	b, err := readBytes(r, offset)
 	if err != nil {
-		return nil, fmt.Errorf("expected to read 10 bytes (ID3v2Header): %v", err)
+		return nil, 0, fmt.Errorf("expected to read 10 bytes (ID3v2Header): %v", err)
 	}
 
 	if string(b[0:3]) != "ID3" {
-		return nil, fmt.Errorf("expected to read \"ID3\"")
+		return nil, 0, fmt.Errorf("expected to read \"ID3\"")
 	}
 
 	b = b[3:]
@@ -74,17 +76,50 @@ func readID3v2Header(r io.Reader) (*id3v2Header, error) {
 	case 0, 1:
 		fallthrough
 	default:
-		return nil, fmt.Errorf("ID3 version: %v, expected: 2, 3 or 4", uint(b[0]))
+		return nil, 0, fmt.Errorf("ID3 version: %v, expected: 2, 3 or 4", uint(b[0]))
 	}
 
 	// NB: We ignore b[1] (the revision) as we don't currently rely on it.
-	return &id3v2Header{
+	h = &id3v2Header{
 		Version:           vers,
 		Unsynchronisation: getBit(b[2], 7),
 		ExtendedHeader:    getBit(b[2], 6),
 		Experimental:      getBit(b[2], 5),
 		Size:              get7BitChunkedInt(b[3:7]),
-	}, nil
+	}
+
+	if h.ExtendedHeader {
+		switch vers {
+		case ID3v2_3:
+			b, err := readBytes(r, 4)
+			if err != nil {
+				return nil, 0, fmt.Errorf("expected to read 4 bytes (ID3v23 extended header len): %v", err)
+			}
+			// skip header, size is excluding len bytes
+			extendedHeaderSize := getInt(b)
+			_, err = readBytes(r, extendedHeaderSize)
+			if err != nil {
+				return nil, 0, fmt.Errorf("expected to read %d bytes (ID3v23 skip extended header): %v", extendedHeaderSize, err)
+			}
+			offset += extendedHeaderSize
+		case ID3v2_4:
+			b, err := readBytes(r, 4)
+			if err != nil {
+				return nil, 0, fmt.Errorf("expected to read 4 bytes (ID3v24 extended header len): %v", err)
+			}
+			// skip header, size is synchsafe int including len bytes
+			extendedHeaderSize := get7BitChunkedInt(b) - 4
+			_, err = readBytes(r, extendedHeaderSize)
+			if err != nil {
+				return nil, 0, fmt.Errorf("expected to read %d bytes (ID3v24 skip extended header): %v", extendedHeaderSize, err)
+			}
+			offset += extendedHeaderSize
+		default:
+			// nop, only 2.3 and 2.4 should have extended header
+		}
+	}
+
+	return h, offset, nil
 }
 
 // id3v2FrameFlags is a type which represents the flags which can be set on an ID3v2 frame.
@@ -184,8 +219,7 @@ func readID3v2_4FrameHeader(r io.Reader) (name string, size int, headerSize int,
 }
 
 // readID3v2Frames reads ID3v2 frames from the given reader using the ID3v2Header.
-func readID3v2Frames(r io.Reader, h *id3v2Header) (map[string]interface{}, error) {
-	offset := 10 // the size of the header
+func readID3v2Frames(r io.Reader, offset int, h *id3v2Header) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 
 	for offset < h.Size {
@@ -357,7 +391,7 @@ func (r *unsynchroniser) Read(p []byte) (int, error) {
 // ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
 // non-nil error on failure.
 func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
-	h, err := readID3v2Header(r)
+	h, offset, err := readID3v2Header(r)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +402,7 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 		ur = &unsynchroniser{Reader: r}
 	}
 
-	f, err := readID3v2Frames(ur, h)
+	f, err := readID3v2Frames(ur, offset, h)
 	if err != nil {
 		return nil, err
 	}
