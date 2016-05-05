@@ -137,7 +137,7 @@ func SumID3v1(r io.ReadSeeker) (string, error) {
 // SumID3v2 constructs a checksum of MP3 audio file data (assumed to have ID3v2 tags) provided by the
 // io.ReadSeeker which is metadata invariant.
 func SumID3v2(r io.ReadSeeker) (string, error) {
-	header, err := readID3v2Header(r)
+	header, _, err := readID3v2Header(r)
 	if err != nil {
 		return "", fmt.Errorf("error reading ID3v2 header: %v", err)
 	}
