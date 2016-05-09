@@ -348,8 +348,8 @@ func encodingDelim(enc byte) ([]byte, error) {
 		return []byte{0}, nil
 	case 1, 2: // see decodeText above
 		return []byte{0, 0}, nil
-	default:
-		return nil, fmt.Errorf("invalid encoding byte %x", enc)
+	default: // see decodeText above
+		return []byte{0}, nil
 	}
 }
 
