@@ -337,8 +337,8 @@ func decodeText(enc byte, b []byte) (string, error) {
 	case 3: // UTF-8
 		return string(b), nil
 
-	default:
-		return "", fmt.Errorf("invalid encoding byte %x", enc)
+	default: // Fallback to ISO-8859-1
+		return decodeISO8859(b), nil
 	}
 }
 
