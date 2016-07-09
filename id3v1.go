@@ -85,6 +85,8 @@ func ReadID3v1Tags(r io.ReadSeeker) (Metadata, error) {
 	if commentBytes[28] == 0 {
 		comment = strings.TrimSpace(string(commentBytes[:28]))
 		track = int(commentBytes[29])
+	} else {
+		comment = strings.TrimSpace(string(commentBytes))
 	}
 
 	var genre string
