@@ -337,8 +337,8 @@ func decodeText(enc byte, b []byte) (string, error) {
 	case 3: // UTF-8
 		return string(b), nil
 
-	default:
-		return "", fmt.Errorf("invalid encoding byte %x", enc)
+	default: // Fallback to ISO-8859-1
+		return decodeISO8859(b), nil
 	}
 }
 
@@ -348,8 +348,8 @@ func encodingDelim(enc byte) ([]byte, error) {
 		return []byte{0}, nil
 	case 1, 2: // see decodeText above
 		return []byte{0, 0}, nil
-	default:
-		return nil, fmt.Errorf("invalid encoding byte %x", enc)
+	default: // see decodeText above
+		return []byte{0}, nil
 	}
 }
 
