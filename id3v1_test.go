@@ -5,11 +5,12 @@
 package tag
 
 import (
+	"./id3v1_test"
 	"bytes"
 	"testing"
 )
 
-//go:generate go-bindata -o id3v1_testdata.go -pkg tag -ignore .txt id3v1_test
+//go:generate go-bindata -o id3v1_test/id3v1_testdata.go -pkg id3v1_test -ignore .txt -ignore .go id3v1_test
 
 func TestReadID3v1Tags(t *testing.T) {
 	for _, name := range []string{
@@ -27,7 +28,7 @@ func TestReadID3v1Tags(t *testing.T) {
 }
 
 func doTest(name string, track int, length int, t *testing.T) {
-	mp3 := MustAsset(name)
+	mp3 := id3v1_test.MustAsset(name)
 	metadata, _ := ReadID3v1Tags(bytes.NewReader(mp3))
 	if actual, total := metadata.Track(); actual != track || total != 0 {
 		t.Errorf("Track number for %s is (%d, %d) where (%d, 0) is expected.", name, actual, total, track)
