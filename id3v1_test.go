@@ -5,24 +5,25 @@
 package tag
 
 import (
-	"./id3v1_test"
 	"bytes"
 	"testing"
+
+	"github.com/dhowden/tag/internal/id3v1_test"
 )
 
-//go:generate go-bindata -o id3v1_test/id3v1_testdata.go -pkg id3v1_test -ignore .txt -ignore .go id3v1_test
+//go:generate go-bindata -o internal/id3v1_test/id3v1_testdata.go -pkg id3v1_test -ignore .txt -ignore .go internal/id3v1_test
 
 func TestReadID3v1Tags(t *testing.T) {
 	for _, name := range []string{
-		"id3v1_test/sample_usascii_v1.mp3",
-		"id3v1_test/sample_ms932_v1.mp3",
-		"id3v1_test/sample_utf8_v1.mp3"} {
+		"internal/id3v1_test/sample_usascii_v1.mp3",
+		"internal/id3v1_test/sample_ms932_v1.mp3",
+		"internal/id3v1_test/sample_utf8_v1.mp3"} {
 		doTest(name, 0, 30, t)
 	}
 	for _, name := range []string{
-		"id3v1_test/sample_usascii_v1.1.mp3",
-		"id3v1_test/sample_ms932_v1.1.mp3",
-		"id3v1_test/sample_utf8_v1.1.mp3"} {
+		"internal/id3v1_test/sample_usascii_v1.1.mp3",
+		"internal/id3v1_test/sample_ms932_v1.1.mp3",
+		"internal/id3v1_test/sample_utf8_v1.1.mp3"} {
 		doTest(name, 1, 28, t)
 	}
 }
