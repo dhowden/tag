@@ -75,16 +75,18 @@ func ReadID3v1Tags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	commentBytes, err := readBytes(r, 29)
+	commentBytes, err := readBytes(r, 30)
 	if err != nil {
 		return nil, err
 	}
 
 	var comment string
 	var track int
-	if commentBytes[27] == 0 {
+	if commentBytes[28] == 0 {
 		comment = strings.TrimSpace(string(commentBytes[:28]))
-		track = int(commentBytes[28])
+		track = int(commentBytes[29])
+	} else {
+		comment = strings.TrimSpace(string(commentBytes))
 	}
 
 	var genre string
