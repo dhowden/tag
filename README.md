@@ -52,18 +52,20 @@ construct the checksum.
 
 There are simple command-line tools which demonstrate basic tag extraction and summing:
 
-    $ go get github.com/dhowden/tag/...
-    $ cd $GOPATH/bin
-    $ ./tag 11\ High\ Hopes.m4a
-    Metadata Format: MP4
-     Title: High Hopes
-     Album: The Division Bell
-     Artist: Pink Floyd
-     Composer: Abbey Road Recording Studios/David Gilmour/Polly Samson
-     Year: 1994
-     Track: 11 of 11
-     Disc: 1 of 1
-     Picture: Picture{Ext: jpeg, MIMEType: image/jpeg, Type: , Description: , Data.Size: 606109}
+```console
+$ go get github.com/dhowden/tag/...
+$ cd $GOPATH/bin
+$ ./tag 11\ High\ Hopes.m4a
+Metadata Format: MP4
+Title: High Hopes
+Album: The Division Bell
+Artist: Pink Floyd
+Composer: Abbey Road Recording Studios/David Gilmour/Polly Samson
+Year: 1994
+Track: 11 of 11
+Disc: 1 of 1
+Picture: Picture{Ext: jpeg, MIMEType: image/jpeg, Type: , Description: , Data.Size: 606109}
 
-    $ ./sum 11\ High\ Hopes.m4a
-    2ae208c5f00a1f21f5fac9b7f6e0b8e52c06da29
+$ ./sum 11\ High\ Hopes.m4a
+2ae208c5f00a1f21f5fac9b7f6e0b8e52c06da29
+```
