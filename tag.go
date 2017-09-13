@@ -69,12 +69,12 @@ type Format string
 // Supported tag formats.
 const (
 	UnknownFormat Format = ""        // Unknown Format.
-	ID3v1                = "ID3v1"   // ID3v1 tag format.
-	ID3v2_2              = "ID3v2.2" // ID3v2.2 tag format.
-	ID3v2_3              = "ID3v2.3" // ID3v2.3 tag format (most common).
-	ID3v2_4              = "ID3v2.4" // ID3v2.4 tag format.
-	MP4                  = "MP4"     // MP4 tag (atom) format (see http://www.ftyps.com/ for a full file type list)
-	VORBIS               = "VORBIS"  // Vorbis Comment tag format.
+	ID3v1         Format = "ID3v1"   // ID3v1 tag format.
+	ID3v2_2       Format = "ID3v2.2" // ID3v2.2 tag format.
+	ID3v2_3       Format = "ID3v2.3" // ID3v2.3 tag format (most common).
+	ID3v2_4       Format = "ID3v2.4" // ID3v2.4 tag format.
+	MP4           Format = "MP4"     // MP4 tag (atom) format (see http://www.ftyps.com/ for a full file type list)
+	VORBIS        Format = "VORBIS"  // Vorbis Comment tag format.
 )
 
 // FileType is an enumeration of the audio file types supported by this package, in particular
@@ -85,13 +85,13 @@ type FileType string
 // Supported file types.
 const (
 	UnknownFileType FileType = ""     // Unknown FileType.
-	MP3                      = "MP3"  // MP3 file
-	M4A                      = "M4A"  // M4A file Apple iTunes (ACC) Audio
-	M4B                      = "M4B"  // M4A file Apple iTunes (ACC) Audio Book
-	M4P                      = "M4P"  // M4A file Apple iTunes (ACC) AES Protected Audio
-	ALAC                     = "ALAC" // Apple Lossless file FIXME: actually detect this
-	FLAC                     = "FLAC" // FLAC file
-	OGG                      = "OGG"  // OGG file
+	MP3             FileType = "MP3"  // MP3 file
+	M4A             FileType = "M4A"  // M4A file Apple iTunes (ACC) Audio
+	M4B             FileType = "M4B"  // M4A file Apple iTunes (ACC) Audio Book
+	M4P             FileType = "M4P"  // M4A file Apple iTunes (ACC) AES Protected Audio
+	ALAC            FileType = "ALAC" // Apple Lossless file FIXME: actually detect this
+	FLAC            FileType = "FLAC" // FLAC file
+	OGG             FileType = "OGG"  // OGG file
 )
 
 // Metadata is an interface which is used to describe metadata retrieved by this package.

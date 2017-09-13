@@ -145,7 +145,7 @@ func parseComment(c string) (k, v string, err error) {
 }
 
 func (m *metadataVorbis) Format() Format {
-	return FLAC
+	return VORBIS
 }
 
 func (m *metadataVorbis) Raw() map[string]interface{} {
