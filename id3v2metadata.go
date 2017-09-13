@@ -20,7 +20,12 @@ func (f frameNames) Name(s string, fm Format) string {
 	switch fm {
 	case ID3v2_2:
 		return l[0]
-	case ID3v2_3, ID3v2_4:
+	case ID3v2_3:
+		return l[1]
+	case ID3v2_4:
+		if s == "year" {
+			return "TDRC"
+		}
 		return l[1]
 	}
 	return ""
