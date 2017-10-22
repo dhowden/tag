@@ -597,6 +597,9 @@ func readAPICFrame(b []byte) (*Picture, error) {
 	mimeType := string(mimeDataSplit[0])
 
 	b = mimeDataSplit[1]
+	if len(b) < 1 {
+		return nil, fmt.Errorf("error decoding APIC mimetype")
+	}
 	picType := b[0]
 
 	descDataSplit, err := dataSplit(b[1:], enc)
