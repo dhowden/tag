@@ -133,6 +133,10 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32) err
 		return err
 	}
 
+	if len(b) < 8 {
+		return fmt.Errorf("invalid encoding: expected at least %d bytes, got %d", 8, len(b))
+	}
+
 	// "data" + size (4 bytes each)
 	b = b[8:]
 
@@ -222,7 +226,7 @@ func readCustomAtom(r io.ReadSeeker, size uint32) (string, uint32, error) {
 			}
 
 			if len(b) < 4 {
-				return "", 0, fmt.Errorf("expected at least %d bytes, got %d", 4, len(b))
+				return "", 0, fmt.Errorf("invalid encoding: expected at least %d bytes, got %d", 4, len(b))
 			}
 			subNames[subName] = string(b[4:])
 
