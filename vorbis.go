@@ -29,6 +29,10 @@ func (m *metadataVorbis) readVorbisComment(r io.Reader) error {
 		return err
 	}
 
+	if vendorLen < 0 {
+		return fmt.Errorf("invalid encoding: expected positive length, got %d", vendorLen)
+	}
+
 	vendor, err := readString(r, vendorLen)
 	if err != nil {
 		return err
