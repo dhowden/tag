@@ -220,6 +220,10 @@ func readCustomAtom(r io.ReadSeeker, size uint32) (string, uint32, error) {
 			if err != nil {
 				return "", 0, err
 			}
+
+			if len(b) < 4 {
+				return "", 0, fmt.Errorf("expected at least %d bytes, got %d", 4, len(b))
+			}
 			subNames[subName] = string(b[4:])
 
 		case "data":
