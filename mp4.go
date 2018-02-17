@@ -140,6 +140,9 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32) err
 	// "data" + size (4 bytes each)
 	b = b[8:]
 
+	if len(b) < 3 {
+		return fmt.Errorf("invalid encoding: expected at least %d bytes, for class, got %d", 3, len(b))
+	}
 	class := getInt(b[1:4])
 	contentType, ok := atomTypes[class]
 	if !ok {
@@ -148,9 +151,16 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32) err
 
 	// 4: atom version (1 byte) + atom flags (3 bytes)
 	// 4: NULL (usually locale indicator)
+	if len(b) < 8 {
+		return fmt.Errorf("invalid encoding: expected at least %d bytes, for atom version and flags, got %d", 8, len(b))
+	}
 	b = b[8:]
 
 	if name == "trkn" || name == "disk" {
+		if len(b) < 6 {
+			return fmt.Errorf("invalid encoding: expected at least %d bytes, for track and disk numbers, got %d", 6, len(b))
+		}
+
 		m.data[name] = int(b[3])
 		m.data[name+"_count"] = int(b[5])
 		return nil
@@ -177,6 +187,9 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32) err
 		data = string(b)
 
 	case "uint8":
+		if len(b) < 1 {
+			return fmt.Errorf("invalid encoding: expected at least %d bytes, for integer tag data, got %d", 1, len(b))
+		}
 		data = getInt(b[:1])
 
 	case "jpeg", "png":
