@@ -326,13 +326,13 @@ func decodeText(enc byte, b []byte) (string, error) {
 		if len(b) == 1 {
 			return "", nil
 		}
-		return decodeUTF16WithBOM(b), nil
+		return decodeUTF16WithBOM(b)
 
 	case 2: // UTF-16 without byte order (assuming BigEndian)
 		if len(b) == 1 {
 			return "", nil
 		}
-		return decodeUTF16(b, binary.BigEndian), nil
+		return decodeUTF16(b, binary.BigEndian)
 
 	case 3: // UTF-8
 		return string(b), nil
@@ -383,7 +383,11 @@ func decodeISO8859(b []byte) string {
 	return string(r)
 }
 
-func decodeUTF16WithBOM(b []byte) string {
+func decodeUTF16WithBOM(b []byte) (string, error) {
+	if len(b) < 2 {
+		return "", errors.New("invalid encoding: expected at least 2 bytes for UTF-16 byte order mark")
+	}
+
 	var bo binary.ByteOrder
 	switch {
 	case b[0] == 0xFE && b[1] == 0xFF:
@@ -400,12 +404,15 @@ func decodeUTF16WithBOM(b []byte) string {
 	return decodeUTF16(b, bo)
 }
 
-func decodeUTF16(b []byte, bo binary.ByteOrder) string {
+func decodeUTF16(b []byte, bo binary.ByteOrder) (string, error) {
+	if len(b)%2 != 0 {
+		return "", errors.New("invalid encoding: expected even number of bytes for UTF-16 encoded text")
+	}
 	s := make([]uint16, 0, len(b)/2)
 	for i := 0; i < len(b); i += 2 {
 		s = append(s, bo.Uint16(b[i:i+2]))
 	}
-	return string(utf16.Decode(s))
+	return string(utf16.Decode(s)), nil
 }
 
 // Comm is a type used in COMM, UFID, TXXX, WXXX and USLT tag.
