@@ -12,7 +12,7 @@ import (
 
 const (
 	idType      int = 1
-	commentType     = 3
+	commentType int = 3
 )
 
 // ReadOGGTags reads OGG metadata from the io.ReadSeeker, returning the resulting
