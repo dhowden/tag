@@ -396,8 +396,7 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	var ur io.Reader
-	ur = r
+	var ur io.Reader = r
 	if h.Unsynchronisation {
 		ur = &unsynchroniser{Reader: r}
 	}
