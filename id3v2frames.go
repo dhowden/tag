@@ -370,6 +370,7 @@ func dataSplit(b []byte, enc byte) ([][]byte, error) {
 
 	if result[1][0] == 0 {
 		// there was a double (or triple) 0 and we cut too early
+		result[0] = append(result[0], result[1][0])
 		result[1] = result[1][1:]
 	}
 	return result, nil
