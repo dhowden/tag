@@ -310,8 +310,15 @@ func readTFrame(b []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join(strings.Split(txt, string([]byte{0})), ""), nil
+	return strings.Join(strings.Split(txt, string(singleZero)), ""), nil
 }
+
+const (
+	encodingISO8859      byte = 0
+	encodingUTF16WithBOM byte = 1
+	encodingUTF16        byte = 2
+	encodingUTF8         byte = 3
+)
 
 func decodeText(enc byte, b []byte) (string, error) {
 	if len(b) == 0 {
@@ -319,22 +326,22 @@ func decodeText(enc byte, b []byte) (string, error) {
 	}
 
 	switch enc {
-	case 0: // ISO-8859-1
+	case encodingISO8859: // ISO-8859-1
 		return decodeISO8859(b), nil
 
-	case 1: // UTF-16 with byte order marker
+	case encodingUTF16WithBOM: // UTF-16 with byte order marker
 		if len(b) == 1 {
 			return "", nil
 		}
 		return decodeUTF16WithBOM(b)
 
-	case 2: // UTF-16 without byte order (assuming BigEndian)
+	case encodingUTF16: // UTF-16 without byte order (assuming BigEndian)
 		if len(b) == 1 {
 			return "", nil
 		}
 		return decodeUTF16(b, binary.BigEndian)
 
-	case 3: // UTF-8
+	case encodingUTF8: // UTF-8
 		return string(b), nil
 
 	default: // Fallback to ISO-8859-1
@@ -342,30 +349,24 @@ func decodeText(enc byte, b []byte) (string, error) {
 	}
 }
 
-func encodingDelim(enc byte) ([]byte, error) {
-	switch enc {
-	case 0, 3: // see decodeText above
-		return []byte{0}, nil
-	case 1, 2: // see decodeText above
-		return []byte{0, 0}, nil
-	default: // see decodeText above
-		return []byte{0}, nil
-	}
-}
+var (
+	singleZero = []byte{0}
+	doubleZero = []byte{0, 0}
+)
 
-func dataSplit(b []byte, enc byte) ([][]byte, error) {
-	delim, err := encodingDelim(enc)
-	if err != nil {
-		return nil, err
+func dataSplit(b []byte, enc byte) [][]byte {
+	delim := singleZero
+	if enc == encodingUTF16 || enc == encodingUTF16WithBOM {
+		delim = doubleZero
 	}
 
 	result := bytes.SplitN(b, delim, 2)
 	if len(result) != 2 {
-		return result, nil
+		return result
 	}
 
 	if len(result[1]) == 0 {
-		return result, nil
+		return result
 	}
 
 	if result[1][0] == 0 {
@@ -373,7 +374,7 @@ func dataSplit(b []byte, enc byte) ([][]byte, error) {
 		result[0] = append(result[0], result[1][0])
 		result[1] = result[1][1:]
 	}
-	return result, nil
+	return result
 }
 
 func decodeISO8859(b []byte) string {
@@ -460,9 +461,9 @@ func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error)
 		b = b[3:]
 	}
 
-	descTextSplit, err := dataSplit(b, enc)
-	if err != nil {
-		return nil, err
+	descTextSplit := dataSplit(b, enc)
+	if len(descTextSplit) < 1 {
+		return nil, fmt.Errorf("error decoding tag description text: invalid encoding")
 	}
 
 	desc, err := decodeText(enc, descTextSplit[0])
@@ -499,7 +500,7 @@ func (u UFID) String() string {
 }
 
 func readUFID(b []byte) (*UFID, error) {
-	result := bytes.SplitN(b, []byte{0}, 2)
+	result := bytes.SplitN(b, singleZero, 2)
 	if len(result) != 2 {
 		return nil, errors.New("expected to split UFID data into 2 pieces")
 	}
@@ -564,9 +565,9 @@ func readPICFrame(b []byte) (*Picture, error) {
 	ext := string(b[1:4])
 	picType := b[4]
 
-	descDataSplit, err := dataSplit(b[5:], enc)
-	if err != nil {
-		return nil, err
+	descDataSplit := dataSplit(b[5:], enc)
+	if len(descDataSplit) != 2 {
+		return nil, errors.New("error decoding PIC description text: invalid encoding")
 	}
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
@@ -601,7 +602,7 @@ func readPICFrame(b []byte) (*Picture, error) {
 // Picture data    <binary data>
 func readAPICFrame(b []byte) (*Picture, error) {
 	enc := b[0]
-	mimeDataSplit := bytes.SplitN(b[1:], []byte{0}, 2)
+	mimeDataSplit := bytes.SplitN(b[1:], singleZero, 2)
 	mimeType := string(mimeDataSplit[0])
 
 	b = mimeDataSplit[1]
@@ -610,9 +611,9 @@ func readAPICFrame(b []byte) (*Picture, error) {
 	}
 	picType := b[0]
 
-	descDataSplit, err := dataSplit(b[1:], enc)
-	if err != nil {
-		return nil, err
+	descDataSplit := dataSplit(b[1:], enc)
+	if len(descDataSplit) != 2 {
+		return nil, errors.New("error decoding APIC description text: invalid encoding")
 	}
 	desc, err := decodeText(enc, descDataSplit[0])
 	if err != nil {
