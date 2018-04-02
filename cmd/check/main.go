@@ -19,15 +19,6 @@ import (
 	"github.com/dhowden/tag"
 )
 
-var itlXML, path string
-var sum bool
-
-func init() {
-	flag.StringVar(&itlXML, "itlXML", "", "iTunes Library Path")
-	flag.StringVar(&path, "path", "", "path to directory containing audio files")
-	flag.BoolVar(&sum, "sum", false, "compute the checksum of the audio file (doesn't work for .flac or .ogg yet)")
-}
-
 func decodeLocation(l string) (string, error) {
 	u, err := url.ParseRequestURI(l)
 	if err != nil {
@@ -38,27 +29,33 @@ func decodeLocation(l string) (string, error) {
 	return path, nil
 }
 
+var (
+	itlXML = flag.String("itlXML", "", "iTunes Library Path")
+	path   = flag.String("path", "", "path to directory containing audio files")
+	sum    = flag.Bool("sum", false, "compute the checksum of the audio file (doesn't work for .flac or .ogg yet)")
+)
+
 func main() {
 	flag.Parse()
 
-	if itlXML == "" && path == "" || itlXML != "" && path != "" {
+	if *itlXML == "" && *path == "" || *itlXML != "" && *path != "" {
 		fmt.Println("you must specify one of -itlXML or -path")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	var paths <-chan string
-	if itlXML != "" {
+	if *itlXML != "" {
 		var err error
-		paths, err = walkLibrary(itlXML)
+		paths, err = walkLibrary(*itlXML)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	}
 
-	if path != "" {
-		paths = walkPath(path)
+	if *path != "" {
+		paths = walkPath(*path)
 	}
 
 	p := &processor{
@@ -100,7 +97,7 @@ func walkPath(root string) <-chan string {
 }
 
 func walkLibrary(path string) (<-chan string, error) {
-	f, err := os.Open(itlXML)
+	f, err := os.Open(*itlXML)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +174,7 @@ func (p *processor) do(ch <-chan string) {
 				p.decodingErrors[err.Error()]++
 			}
 
-			if sum {
+			if *sum {
 				_, err = tf.Seek(0, os.SEEK_SET)
 				if err != nil {
 					fmt.Println("DIED:", path, "error seeking back to 0:", err)

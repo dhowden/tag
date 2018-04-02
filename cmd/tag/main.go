@@ -17,22 +17,18 @@ import (
 	"github.com/dhowden/tag/mbz"
 )
 
-var raw bool
-var extractMBZ bool
-
 var usage = func() {
 	fmt.Fprintf(os.Stderr, "usage: %s [optional flags] filename\n", os.Args[0])
 	flag.PrintDefaults()
 }
 
-func init() {
-	flag.BoolVar(&raw, "raw", false, "show raw tag data")
-	flag.BoolVar(&extractMBZ, "mbz", false, "extract MusicBrainz tag data (if available)")
-
-	flag.Usage = usage
-}
+var (
+	raw        = flag.Bool("raw", false, "show raw tag data")
+	extractMBZ = flag.Bool("mbz", false, "extract MusicBrainz tag data (if available)")
+)
 
 func main() {
+	flag.Usage = usage
 	flag.Parse()
 
 	if flag.NArg() != 1 {
@@ -55,7 +51,7 @@ func main() {
 
 	printMetadata(m)
 
-	if raw {
+	if *raw {
 		fmt.Println()
 		fmt.Println()
 
@@ -69,7 +65,7 @@ func main() {
 		}
 	}
 
-	if extractMBZ {
+	if *extractMBZ {
 		b, err := json.MarshalIndent(mbz.Extract(m), "", "  ")
 		if err != nil {
 			fmt.Printf("error marshalling MusicBrainz info: %v\n", err)
