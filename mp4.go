@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 )
 
@@ -113,7 +112,7 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 		}
 
 		if !ok {
-			_, err := r.Seek(int64(size-8), os.SEEK_CUR)
+			_, err := r.Seek(int64(size-8), io.SeekCurrent)
 			if err != nil {
 				return err
 			}
@@ -246,7 +245,7 @@ func readCustomAtom(r io.ReadSeeker, size uint32) (string, uint32, error) {
 		case "data":
 			// Found the "data" atom, rewind
 			dataSize = subSize + 8 // will need to re-read "data" + size (4 + 4)
-			_, err := r.Seek(-8, os.SEEK_CUR)
+			_, err := r.Seek(-8, io.SeekCurrent)
 			if err != nil {
 				return "", 0, err
 			}

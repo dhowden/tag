@@ -3,7 +3,6 @@ package tag
 import (
 	"fmt"
 	"io"
-	"os"
 )
 
 // Identify identifies the format and file type of the data in the ReadSeeker.
@@ -13,7 +12,7 @@ func Identify(r io.ReadSeeker) (format Format, fileType FileType, err error) {
 		return
 	}
 
-	_, err = r.Seek(-11, os.SEEK_CUR)
+	_, err = r.Seek(-11, io.SeekCurrent)
 	if err != nil {
 		err = fmt.Errorf("could not seek back to original position: %v", err)
 		return
@@ -59,7 +58,7 @@ func Identify(r io.ReadSeeker) (format Format, fileType FileType, err error) {
 		return format, MP3, nil
 	}
 
-	n, err := r.Seek(-128, os.SEEK_END)
+	n, err := r.Seek(-128, io.SeekEnd)
 	if err != nil {
 		return
 	}
@@ -69,7 +68,7 @@ func Identify(r io.ReadSeeker) (format Format, fileType FileType, err error) {
 		return
 	}
 
-	_, err = r.Seek(-n, os.SEEK_CUR)
+	_, err = r.Seek(-n, io.SeekCurrent)
 	if err != nil {
 		return
 	}
