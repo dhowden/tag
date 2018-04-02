@@ -7,7 +7,6 @@ package tag
 import (
 	"errors"
 	"io"
-	"os"
 )
 
 const (
@@ -30,7 +29,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 
 	// Skip 22 bytes of Page header to read page_segments length byte at position 26
 	// See http://www.xiph.org/ogg/doc/framing.html
-	_, err = r.Seek(22, os.SEEK_CUR)
+	_, err = r.Seek(22, io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +40,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	// Seek and discard the segments
-	_, err = r.Seek(int64(nS), os.SEEK_CUR)
+	_, err = r.Seek(int64(nS), io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +56,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 
 	// Seek and discard 29 bytes from common and identification header
 	// See http://www.xiph.org/vorbis/doc/Vorbis_I_spec.html#x1-610004.2
-	_, err = r.Seek(29, os.SEEK_CUR)
+	_, err = r.Seek(29, io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +72,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	// Skip page 2 header, same as line 30
-	_, err = r.Seek(22, os.SEEK_CUR)
+	_, err = r.Seek(22, io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +82,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 		return nil, err
 	}
 
-	_, err = r.Seek(int64(nS), os.SEEK_CUR)
+	_, err = r.Seek(int64(nS), io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	// Seek and discard 6 bytes from common header
-	_, err = r.Seek(6, os.SEEK_CUR)
+	_, err = r.Seek(6, io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}

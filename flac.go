@@ -7,7 +7,6 @@ package tag
 import (
 	"errors"
 	"io"
-	"os"
 )
 
 // blockType is a type which represents an enumeration of valid FLAC blocks
@@ -80,7 +79,7 @@ func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err er
 		err = m.readPictureBlock(r)
 
 	default:
-		_, err = r.Seek(int64(blockLen), os.SEEK_CUR)
+		_, err = r.Seek(int64(blockLen), io.SeekCurrent)
 	}
 	return
 }

@@ -10,6 +10,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -175,7 +176,7 @@ func (p *processor) do(ch <-chan string) {
 			}
 
 			if *sum {
-				_, err = tf.Seek(0, os.SEEK_SET)
+				_, err = tf.Seek(0, io.SeekStart)
 				if err != nil {
 					fmt.Println("DIED:", path, "error seeking back to 0:", err)
 					return
