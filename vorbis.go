@@ -206,21 +206,19 @@ func (m *metadataVorbis) Genre() string {
 }
 
 func (m *metadataVorbis) Year() int {
-	// dateFormat is a string (layout) format using the standard layout motifs
+	// dateFormat is a string (format) build with the golang format pattern
 	// present in the time/format.go file https://golang.org/src/time/format.go#L88
 	var dateFormat string
 
+	// The date need to follow the international standard https://en.wikipedia.org/wiki/ISO_8601
+	// and obviously the VorbisComment standard https://wiki.xiph.org/VorbisComment#Date_and_time
 	switch len(m.c["date"]) {
 	case 4:
 		dateFormat = "2006"
-	case 6:
-		dateFormat = "012006"
 	case 7:
-		dateFormat = "01-2006"
-	case 8:
-		dateFormat = "02012006"
+		dateFormat = "2006-01"
 	case 10:
-		dateFormat = "02-01-2006"
+		dateFormat = "2006-01-02"
 	}
 
 	t, _ := time.Parse(dateFormat, m.c["date"])
