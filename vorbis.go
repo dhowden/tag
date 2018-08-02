@@ -10,6 +10,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func newMetadataVorbis() *metadataVorbis {
@@ -205,8 +206,23 @@ func (m *metadataVorbis) Genre() string {
 }
 
 func (m *metadataVorbis) Year() int {
-	// FIXME: try to parse the date in m.c["date"] to extract this
-	return 0
+	var dateFormat string
+
+	switch len(m.c["date"]) {
+	case 4:
+		dateFormat = "2006"
+	case 6:
+		dateFormat = "012006"
+	case 7:
+		dateFormat = "01-2006"
+	case 8:
+		dateFormat = "02012006"
+	case 10:
+		dateFormat = "02-01-2006"
+	}
+
+	t, _ := time.Parse(dateFormat, m.c["date"])
+	return t.Year()
 }
 
 func (m *metadataVorbis) Track() (int, int) {
