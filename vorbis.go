@@ -206,8 +206,6 @@ func (m *metadataVorbis) Genre() string {
 }
 
 func (m *metadataVorbis) Year() int {
-	// dateFormat is a string (format) build with the golang format pattern
-	// present in the time/format.go file https://golang.org/src/time/format.go#L88
 	var dateFormat string
 
 	// The date need to follow the international standard https://en.wikipedia.org/wiki/ISO_8601
