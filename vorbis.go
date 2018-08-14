@@ -211,6 +211,8 @@ func (m *metadataVorbis) Year() int {
 	// The date need to follow the international standard https://en.wikipedia.org/wiki/ISO_8601
 	// and obviously the VorbisComment standard https://wiki.xiph.org/VorbisComment#Date_and_time
 	switch len(m.c["date"]) {
+	case 0:
+		return 0
 	case 4:
 		dateFormat = "2006"
 	case 7:
