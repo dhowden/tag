@@ -54,17 +54,17 @@ func ReadID3v1Tags(r io.ReadSeeker) (Metadata, error) {
 		return nil, ErrNotID3v1
 	}
 
-	title, err := readString(r, 30)
+	title, err := readStringTrimNULL(r, 30)
 	if err != nil {
 		return nil, err
 	}
 
-	artist, err := readString(r, 30)
+	artist, err := readStringTrimNULL(r, 30)
 	if err != nil {
 		return nil, err
 	}
 
-	album, err := readString(r, 30)
+	album, err := readStringTrimNULL(r, 30)
 	if err != nil {
 		return nil, err
 	}
