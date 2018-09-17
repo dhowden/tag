@@ -50,6 +50,9 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 
 	case string(b[0:3]) == "ID3":
 		return ReadID3v2Tags(r)
+
+	case string(b[0:4]) == "DSD ":
+		return ReadDSFTags(r)
 	}
 
 	m, err := ReadID3v1Tags(r)
@@ -91,6 +94,7 @@ const (
 	ALAC            FileType = "ALAC" // Apple Lossless file FIXME: actually detect this
 	FLAC            FileType = "FLAC" // FLAC file
 	OGG             FileType = "OGG"  // OGG file
+	DSF             FileType = "DSF"  // DSF file DSD Sony format see https://dsd-guide.com/sites/default/files/white-papers/DSFFileFormatSpec_E.pdf
 )
 
 // Metadata is an interface which is used to describe metadata retrieved by this package.
