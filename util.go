@@ -32,6 +32,15 @@ func getInt(b []byte) int {
 	return n
 }
 
+func getIntLittleEndian(b []byte) int {
+	var n int
+	for i := len(b) - 1; i >= 0; i-- {
+		n = n << 8
+		n |= int(b[i])
+	}
+	return n
+}
+
 func readBytes(r io.Reader, n int) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := io.ReadFull(r, b)
