@@ -11,6 +11,7 @@ import (
 
 // ReadDSFTags reads DSF metadata from the io.ReadSeeker, returning the resulting
 // metadata in a Metadata implementation, or non-nil error if there was a problem.
+// samples: http://www.2l.no/hires/index.html
 func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 	dsd, err := readString(r, 4)
 	if err != nil {
@@ -20,7 +21,7 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 		return nil, errors.New("expected 'DSD '")
 	}
 
-	_, err = r.Seek(int64(20), 0)
+	_, err = r.Seek(int64(16), io.SeekCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +32,7 @@ func ReadDSFTags(r io.ReadSeeker) (Metadata, error) {
 	}
 	id3Pointer := getIntLittleEndian(n4)
 
-	_, err = r.Seek(int64(id3Pointer), 0)
+	_, err = r.Seek(int64(id3Pointer), io.SeekStart)
 	if err != nil {
 		return nil, err
 	}
