@@ -5,7 +5,6 @@
 package tag
 
 import (
-	"bytes"
 	"encoding/binary"
 	"io"
 )
@@ -48,14 +47,6 @@ func readString(r io.Reader, n int) (string, error) {
 		return "", err
 	}
 	return string(b), nil
-}
-
-func readStringTrimNULL(r io.Reader, n int) (string, error) {
-	b, err := readBytes(r, n)
-	if err != nil {
-		return "", err
-	}
-	return string(bytes.Trim(b, "\x00")), nil
 }
 
 func readInt(r io.Reader, n int) (int, error) {
