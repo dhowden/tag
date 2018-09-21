@@ -79,3 +79,38 @@ func TestGetInt(t *testing.T) {
 		}
 	}
 }
+
+func TestGetIntLittleEndian(t *testing.T) {
+	tests := []struct {
+		input  []byte
+		output int
+	}{
+		{
+			[]byte{},
+			0,
+		},
+		{
+			[]byte{0x01},
+			1,
+		},
+		{
+			[]byte{0xF1, 0xF2},
+			0xF2F1,
+		},
+		{
+			[]byte{0xF1, 0xF2, 0xF3},
+			0xF3F2F1,
+		},
+		{
+			[]byte{0xF1, 0xF2, 0xF3, 0xF4},
+			0xF4F3F2F1,
+		},
+	}
+
+	for ii, tt := range tests {
+		got := getIntLittleEndian(tt.input)
+		if got != tt.output {
+			t.Errorf("[%d] getInt(%v) = %v, expected %v", ii, tt.input, got, tt.output)
+		}
+	}
+}
