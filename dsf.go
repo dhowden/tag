@@ -101,6 +101,10 @@ func (m metadataDSF) Lyrics() string {
 	return m.id3.Lyrics()
 }
 
+func (m metadataDSF) Comment() string {
+	return m.id3.Comment()
+}
+
 func (m metadataDSF) Raw() map[string]interface{} {
 	return m.id3.Raw()
 }
