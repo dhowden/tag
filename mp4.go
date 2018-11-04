@@ -344,6 +344,14 @@ func (m metadataMP4) Lyrics() string {
 	return t.(string)
 }
 
+func (m metadataMP4) Comment() string {
+	t, ok := m.data["\xa9cmt"]
+	if !ok {
+		return ""
+	}
+	return t.(string)
+}
+
 func (m metadataMP4) Picture() *Picture {
 	v, ok := m.data["covr"]
 	if !ok {
