@@ -62,21 +62,12 @@ func TestReadFrom(t *testing.T) {
 		"with_tags/sample.m4a":        fullMetadata,
 		"with_tags/sample.mp4":        fullMetadata,
 		"with_tags/sample.ogg":        fullMetadata,
-<<<<<<< HEAD
 		"with_tags/sample.dsf":        fullMetadata,
 		"without_tags/sample.flac":    emptyMetadata,
 		"without_tags/sample.m4a":     emptyMetadata,
 		"without_tags/sample.mp3":     emptyMetadata,
 		"without_tags/sample.mp4":     emptyMetadata,
 		"without_tags/sample.ogg":     emptyMetadata,
-=======
-
-		"without_tags/sample.flac": emptyMetadata,
-		"without_tags/sample.m4a":  emptyMetadata,
-		"without_tags/sample.mp3":  emptyMetadata,
-		"without_tags/sample.mp4":  emptyMetadata,
-		"without_tags/sample.ogg":  emptyMetadata,
->>>>>>> 34f7f1e3c8f6e0f3573f7e7501c82b13eff5dc27
 	}
 
 	for path, metadata := range testdata {
