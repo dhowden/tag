@@ -138,6 +138,9 @@ type Metadata interface {
 	// Lyrics returns the lyrics, or an empty string if unavailable.
 	Lyrics() string
 
+	// Comment returns the comment, or an empty string if unavailable.
+	Comment() string
+
 	// Raw returns the raw mapping of retrieved tag names and associated values.
 	// NB: tag/atom names are not standardised between formats.
 	Raw() map[string]interface{}

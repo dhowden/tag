@@ -39,15 +39,17 @@ var fullMetadata = testMetadata{
 	Track:       3,
 	TrackTotal:  6,
 	Year:        2000,
+	Comment:     "Test Comment",
 }
 var mp3id3v11Metadata = testMetadata{
-	Album:  "Test Album",
-	Artist: "Test Artist",
-	Genre:  "Jazz",
-	Lyrics: "",
-	Title:  "Test Title",
-	Track:  3,
-	Year:   2000,
+	Album:   "Test Album",
+	Artist:  "Test Artist",
+	Genre:   "Jazz",
+	Lyrics:  "",
+	Title:   "Test Title",
+	Track:   3,
+	Year:    2000,
+	Comment: "Test Comment",
 }
 
 func TestReadFrom(t *testing.T) {
@@ -60,12 +62,21 @@ func TestReadFrom(t *testing.T) {
 		"with_tags/sample.m4a":        fullMetadata,
 		"with_tags/sample.mp4":        fullMetadata,
 		"with_tags/sample.ogg":        fullMetadata,
+<<<<<<< HEAD
 		"with_tags/sample.dsf":        fullMetadata,
 		"without_tags/sample.flac":    emptyMetadata,
 		"without_tags/sample.m4a":     emptyMetadata,
 		"without_tags/sample.mp3":     emptyMetadata,
 		"without_tags/sample.mp4":     emptyMetadata,
 		"without_tags/sample.ogg":     emptyMetadata,
+=======
+
+		"without_tags/sample.flac": emptyMetadata,
+		"without_tags/sample.m4a":  emptyMetadata,
+		"without_tags/sample.mp3":  emptyMetadata,
+		"without_tags/sample.mp4":  emptyMetadata,
+		"without_tags/sample.ogg":  emptyMetadata,
+>>>>>>> 34f7f1e3c8f6e0f3573f7e7501c82b13eff5dc27
 	}
 
 	for path, metadata := range testdata {
@@ -81,6 +92,7 @@ func TestReadFrom(t *testing.T) {
 }
 
 func test(t *testing.T, path string, metadata testMetadata) error {
+	t.Log("testing " + path)
 	f, err := os.Open("testdata/" + path)
 	if err != nil {
 		return err
@@ -104,6 +116,7 @@ func compareMetadata(t *testing.T, m Metadata, tt testMetadata) {
 	testValue(t, tt.Lyrics, m.Lyrics())
 	testValue(t, tt.Title, m.Title())
 	testValue(t, tt.Year, m.Year())
+	testValue(t, tt.Comment, m.Comment())
 
 	disc, discTotal := m.Disc()
 	testValue(t, tt.Disc, disc)
