@@ -43,6 +43,7 @@ var frames = frameNames(map[string][2]string{
 	"genre":        [2]string{"TCO", "TCON"},
 	"picture":      [2]string{"PIC", "APIC"},
 	"lyrics":       [2]string{"", "USLT"},
+	"comment":      [2]string{"COM", "COMM"},
 })
 
 // metadataID3v2 is the implementation of Metadata used for ID3v2 tags.
@@ -117,6 +118,18 @@ func (m metadataID3v2) Lyrics() string {
 		return ""
 	}
 	return t.(*Comm).Text
+}
+
+func (m metadataID3v2) Comment() string {
+	t, ok := m.frames[frames.Name("comment", m.Format())]
+	if !ok {
+		return ""
+	}
+	// id3v23 has Text, id3v24 has Description
+	if t.(*Comm).Description == "" {
+		return trimString(t.(*Comm).Text)
+	}
+	return trimString(t.(*Comm).Description)
 }
 
 func (m metadataID3v2) Picture() *Picture {

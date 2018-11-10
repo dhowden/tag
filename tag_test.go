@@ -39,15 +39,17 @@ var fullMetadata = testMetadata{
 	Track:       3,
 	TrackTotal:  6,
 	Year:        2000,
+	Comment:     "Test Comment",
 }
 var mp3id3v11Metadata = testMetadata{
-	Album:  "Test Album",
-	Artist: "Test Artist",
-	Genre:  "Jazz",
-	Lyrics: "",
-	Title:  "Test Title",
-	Track:  3,
-	Year:   2000,
+	Album:   "Test Album",
+	Artist:  "Test Artist",
+	Genre:   "Jazz",
+	Lyrics:  "",
+	Title:   "Test Title",
+	Track:   3,
+	Year:    2000,
+	Comment: "Test Comment",
 }
 
 type testData struct {
@@ -116,6 +118,7 @@ func compareMetadata(t *testing.T, m Metadata, tt testData) {
 	testValue(t, tt.Lyrics, m.Lyrics())
 	testValue(t, tt.Title, m.Title())
 	testValue(t, tt.Year, m.Year())
+	testValue(t, tt.Comment, m.Comment())
 
 	disc, discTotal := m.Disc()
 	testValue(t, tt.Disc, disc)

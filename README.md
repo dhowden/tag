@@ -36,6 +36,7 @@ type Metadata interface {
 
 	Picture() *Picture // Artwork
 	Lyrics() string
+	Comment() string
 
 	Raw() map[string]interface{} // NB: raw tag names are not consistent across formats.
 }

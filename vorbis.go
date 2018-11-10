@@ -243,6 +243,13 @@ func (m *metadataVorbis) Lyrics() string {
 	return m.c["lyrics"]
 }
 
+func (m *metadataVorbis) Comment() string {
+	if m.c["comment"] != "" {
+		return m.c["comment"]
+	}
+	return m.c["description"]
+}
+
 func (m *metadataVorbis) Picture() *Picture {
 	return m.p
 }

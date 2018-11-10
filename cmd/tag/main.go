@@ -95,4 +95,5 @@ func printMetadata(m tag.Metadata) {
 
 	fmt.Printf(" Picture: %v\n", m.Picture())
 	fmt.Printf(" Lyrics: %v\n", m.Lyrics())
+	fmt.Printf(" Comment: %v\n", m.Comment())
 }
