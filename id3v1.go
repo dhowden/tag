@@ -125,9 +125,12 @@ func (m metadataID3v1) Album() string  { return m["album"].(string) }
 func (m metadataID3v1) Artist() string { return m["artist"].(string) }
 func (m metadataID3v1) Genre() string  { return m["genre"].(string) }
 
+func (m metadataID3v1) Date() string {
+	return m["year"].(string) // id3v1 only has year
+}
+
 func (m metadataID3v1) Year() int {
-	y := m["year"].(string)
-	n, err := strconv.Atoi(y)
+	n, err := strconv.Atoi(m.Date())
 	if err != nil {
 		return 0
 	}

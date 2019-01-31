@@ -205,12 +205,17 @@ func (m *metadataVorbis) Genre() string {
 	return m.c["genre"]
 }
 
+func (m *metadataVorbis) Date() string {
+	return m.c["date"]
+}
+
 func (m *metadataVorbis) Year() int {
 	var dateFormat string
 
 	// The date need to follow the international standard https://en.wikipedia.org/wiki/ISO_8601
 	// and obviously the VorbisComment standard https://wiki.xiph.org/VorbisComment#Date_and_time
-	switch len(m.c["date"]) {
+	date := m.Date()
+	switch len(date) {
 	case 0:
 		return 0
 	case 4:
@@ -221,7 +226,7 @@ func (m *metadataVorbis) Year() int {
 		dateFormat = "2006-01-02"
 	}
 
-	t, _ := time.Parse(dateFormat, m.c["date"])
+	t, _ := time.Parse(dateFormat, date)
 	return t.Year()
 }
 

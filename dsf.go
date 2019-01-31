@@ -81,6 +81,10 @@ func (m metadataDSF) Year() int {
 	return m.id3.Year()
 }
 
+func (m metadataDSF) Date() string {
+	return m.id3.Date()
+}
+
 func (m metadataDSF) Genre() string {
 	return m.id3.Genre()
 }

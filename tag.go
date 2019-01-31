@@ -123,6 +123,9 @@ type Metadata interface {
 	// Year returns the year of the track.
 	Year() int
 
+	// Date returns the date of the track.
+	Date() string
+
 	// Genre returns the genre of the track.
 	Genre() string
 

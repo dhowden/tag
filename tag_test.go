@@ -22,6 +22,7 @@ type testMetadata struct {
 	Title       string
 	Track       int
 	TrackTotal  int
+	Date        string
 	Year        int
 }
 
@@ -39,6 +40,7 @@ var fullMetadata = testMetadata{
 	Track:       3,
 	TrackTotal:  6,
 	Year:        2000,
+	Date:        "2000-01-02",
 	Comment:     "Test Comment",
 }
 var mp3id3v11Metadata = testMetadata{
@@ -49,6 +51,7 @@ var mp3id3v11Metadata = testMetadata{
 	Title:   "Test Title",
 	Track:   3,
 	Year:    2000,
+	Date:    "2000",
 	Comment: "Test Comment",
 }
 
@@ -106,6 +109,11 @@ func compareMetadata(t *testing.T, m Metadata, tt testMetadata) {
 	testValue(t, tt.Genre, m.Genre())
 	testValue(t, tt.Lyrics, m.Lyrics())
 	testValue(t, tt.Title, m.Title())
+	if m.Format() == VORBIS || m.Date() == "" {
+		testValue(t, tt.Date, m.Date())
+	} else {
+		testValue(t, tt.Date[:4], m.Date())
+	}
 	testValue(t, tt.Year, m.Year())
 	testValue(t, tt.Comment, m.Comment())
 

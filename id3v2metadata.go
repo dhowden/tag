@@ -23,7 +23,7 @@ func (f frameNames) Name(s string, fm Format) string {
 	case ID3v2_3:
 		return l[1]
 	case ID3v2_4:
-		if s == "year" {
+		if s == "year" || s == "date" {
 			return "TDRC"
 		}
 		return l[1]
@@ -32,18 +32,19 @@ func (f frameNames) Name(s string, fm Format) string {
 }
 
 var frames = frameNames(map[string][2]string{
-	"title":        [2]string{"TT2", "TIT2"},
-	"artist":       [2]string{"TP1", "TPE1"},
-	"album":        [2]string{"TAL", "TALB"},
-	"album_artist": [2]string{"TP2", "TPE2"},
-	"composer":     [2]string{"TCM", "TCOM"},
-	"year":         [2]string{"TYE", "TYER"},
-	"track":        [2]string{"TRK", "TRCK"},
-	"disc":         [2]string{"TPA", "TPOS"},
-	"genre":        [2]string{"TCO", "TCON"},
-	"picture":      [2]string{"PIC", "APIC"},
-	"lyrics":       [2]string{"", "USLT"},
-	"comment":      [2]string{"COM", "COMM"},
+	"title":        {"TT2", "TIT2"},
+	"artist":       {"TP1", "TPE1"},
+	"album":        {"TAL", "TALB"},
+	"album_artist": {"TP2", "TPE2"},
+	"composer":     {"TCM", "TCOM"},
+	"date":         {"TDA", "TDAT"},
+	"year":         {"TYE", "TYER"},
+	"track":        {"TRK", "TRCK"},
+	"disc":         {"TPA", "TPOS"},
+	"genre":        {"TCO", "TCON"},
+	"picture":      {"PIC", "APIC"},
+	"lyrics":       {"", "USLT"},
+	"comment":      {"COM", "COMM"},
 })
 
 // metadataID3v2 is the implementation of Metadata used for ID3v2 tags.
@@ -86,6 +87,16 @@ func (m metadataID3v2) Composer() string {
 
 func (m metadataID3v2) Genre() string {
 	return id3v2genre(m.getString(frames.Name("genre", m.Format())))
+}
+
+func (m metadataID3v2) Date() string {
+	date := m.getString(frames.Name("date", m.Format()))
+	if "" == date {
+		if year := m.Year(); year != 0 {
+			return strconv.Itoa(year)
+		}
+	}
+	return date
 }
 
 func (m metadataID3v2) Year() int {

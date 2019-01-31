@@ -245,12 +245,12 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"internal/id3v1_test/sample_ms932_v1.1.mp3": internalId3v1_testSample_ms932_v11Mp3,
-	"internal/id3v1_test/sample_ms932_v1.mp3": internalId3v1_testSample_ms932_v1Mp3,
+	"internal/id3v1_test/sample_ms932_v1.1.mp3":   internalId3v1_testSample_ms932_v11Mp3,
+	"internal/id3v1_test/sample_ms932_v1.mp3":     internalId3v1_testSample_ms932_v1Mp3,
 	"internal/id3v1_test/sample_usascii_v1.1.mp3": internalId3v1_testSample_usascii_v11Mp3,
-	"internal/id3v1_test/sample_usascii_v1.mp3": internalId3v1_testSample_usascii_v1Mp3,
-	"internal/id3v1_test/sample_utf8_v1.1.mp3": internalId3v1_testSample_utf8_v11Mp3,
-	"internal/id3v1_test/sample_utf8_v1.mp3": internalId3v1_testSample_utf8_v1Mp3,
+	"internal/id3v1_test/sample_usascii_v1.mp3":   internalId3v1_testSample_usascii_v1Mp3,
+	"internal/id3v1_test/sample_utf8_v1.1.mp3":    internalId3v1_testSample_utf8_v11Mp3,
+	"internal/id3v1_test/sample_utf8_v1.mp3":      internalId3v1_testSample_utf8_v1Mp3,
 }
 
 // AssetDir returns the file names below a certain
@@ -292,15 +292,16 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
-	"internal": &bintree{nil, map[string]*bintree{
-		"id3v1_test": &bintree{nil, map[string]*bintree{
-			"sample_ms932_v1.1.mp3": &bintree{internalId3v1_testSample_ms932_v11Mp3, map[string]*bintree{}},
-			"sample_ms932_v1.mp3": &bintree{internalId3v1_testSample_ms932_v1Mp3, map[string]*bintree{}},
-			"sample_usascii_v1.1.mp3": &bintree{internalId3v1_testSample_usascii_v11Mp3, map[string]*bintree{}},
-			"sample_usascii_v1.mp3": &bintree{internalId3v1_testSample_usascii_v1Mp3, map[string]*bintree{}},
-			"sample_utf8_v1.1.mp3": &bintree{internalId3v1_testSample_utf8_v11Mp3, map[string]*bintree{}},
-			"sample_utf8_v1.mp3": &bintree{internalId3v1_testSample_utf8_v1Mp3, map[string]*bintree{}},
+	"internal": {nil, map[string]*bintree{
+		"id3v1_test": {nil, map[string]*bintree{
+			"sample_ms932_v1.1.mp3":   {internalId3v1_testSample_ms932_v11Mp3, map[string]*bintree{}},
+			"sample_ms932_v1.mp3":     {internalId3v1_testSample_ms932_v1Mp3, map[string]*bintree{}},
+			"sample_usascii_v1.1.mp3": {internalId3v1_testSample_usascii_v11Mp3, map[string]*bintree{}},
+			"sample_usascii_v1.mp3":   {internalId3v1_testSample_usascii_v1Mp3, map[string]*bintree{}},
+			"sample_utf8_v1.1.mp3":    {internalId3v1_testSample_utf8_v11Mp3, map[string]*bintree{}},
+			"sample_utf8_v1.mp3":      {internalId3v1_testSample_utf8_v1Mp3, map[string]*bintree{}},
 		}},
 	}},
 }}
@@ -351,4 +352,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

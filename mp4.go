@@ -311,8 +311,12 @@ func (m metadataMP4) Genre() string {
 	return m.getString(atoms.Name("genre"))
 }
 
+func (m metadataMP4) Date() string {
+	return m.getString(atoms.Name("year"))
+}
+
 func (m metadataMP4) Year() int {
-	date := m.getString(atoms.Name("year"))
+	date := m.Date()
 	if len(date) >= 4 {
 		year, _ := strconv.Atoi(date[:4])
 		return year
