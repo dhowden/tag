@@ -52,26 +52,37 @@ var mp3id3v11Metadata = testMetadata{
 	Comment: "Test Comment",
 }
 
+type testData struct {
+	testMetadata
+	FileType
+	Format
+}
+
 func TestReadFrom(t *testing.T) {
-	testdata := map[string]testMetadata{
-		"with_tags/sample.flac":       fullMetadata,
-		"with_tags/sample.id3v11.mp3": mp3id3v11Metadata,
-		"with_tags/sample.id3v22.mp3": fullMetadata,
-		"with_tags/sample.id3v23.mp3": fullMetadata,
-		"with_tags/sample.id3v24.mp3": fullMetadata,
-		"with_tags/sample.m4a":        fullMetadata,
-		"with_tags/sample.mp4":        fullMetadata,
-		"with_tags/sample.ogg":        fullMetadata,
-		"with_tags/sample.dsf":        fullMetadata,
-		"without_tags/sample.flac":    emptyMetadata,
-		"without_tags/sample.m4a":     emptyMetadata,
-		"without_tags/sample.mp3":     emptyMetadata,
-		"without_tags/sample.mp4":     emptyMetadata,
-		"without_tags/sample.ogg":     emptyMetadata,
+	testdata := map[string]testData{
+		"with_tags/sample.flac":       {fullMetadata, FLAC, VORBIS},
+		"with_tags/sample.id3v11.mp3": {mp3id3v11Metadata, MP3, ID3v1},
+		// TODO: Convert sample.id3v22.mp3 file to ID3v2.2 tag format
+		"with_tags/sample.id3v22.mp3": {fullMetadata, MP3, ID3v2_3},
+		"with_tags/sample.id3v23.mp3": {fullMetadata, MP3, ID3v2_3},
+		"with_tags/sample.id3v24.mp3": {fullMetadata, MP3, ID3v2_4},
+		// TODO: Detect correct file type
+		"with_tags/sample.m4a": {fullMetadata, UnknownFileType, MP4},
+		// TODO: Detect correct file type
+		"with_tags/sample.mp4": {fullMetadata, UnknownFileType, MP4},
+		"with_tags/sample.ogg": {fullMetadata, OGG, VORBIS},
+
+		"without_tags/sample.flac": {emptyMetadata, FLAC, VORBIS},
+		// TODO: Detect correct file type
+		"without_tags/sample.m4a": {emptyMetadata, UnknownFileType, MP4},
+		"without_tags/sample.mp3": {emptyMetadata, MP3, UnknownFormat},
+		// TODO: Detect correct file type
+		"without_tags/sample.mp4": {emptyMetadata, UnknownFileType, MP4},
+		"without_tags/sample.ogg": {emptyMetadata, OGG, VORBIS},
 	}
 
-	for path, metadata := range testdata {
-		if err := test(t, path, metadata); err != nil {
+	for path, data := range testdata {
+		if err := test(t, path, data); err != nil {
 
 			// mp3 id3v11 returns an err if it doesn't find any tags
 			if err != ErrNoTagsFound && path != "without_tags/sample.mp3" {
@@ -82,8 +93,8 @@ func TestReadFrom(t *testing.T) {
 	}
 }
 
-func test(t *testing.T, path string, metadata testMetadata) error {
-	t.Log("testing " + path)
+func test(t *testing.T, path string, data testData) error {
+	t.Log("testing '" + path + "'")
 	f, err := os.Open("testdata/" + path)
 	if err != nil {
 		return err
@@ -94,11 +105,11 @@ func test(t *testing.T, path string, metadata testMetadata) error {
 	if err != nil {
 		return err
 	}
-	compareMetadata(t, m, metadata)
+	compareMetadata(t, m, data)
 	return nil
 }
 
-func compareMetadata(t *testing.T, m Metadata, tt testMetadata) {
+func compareMetadata(t *testing.T, m Metadata, tt testData) {
 	testValue(t, tt.Album, m.Album())
 	testValue(t, tt.AlbumArtist, m.AlbumArtist())
 	testValue(t, tt.Artist, m.Artist())
@@ -116,6 +127,9 @@ func compareMetadata(t *testing.T, m Metadata, tt testMetadata) {
 	track, trackTotal := m.Track()
 	testValue(t, tt.Track, track)
 	testValue(t, tt.TrackTotal, trackTotal)
+
+	testValue(t, tt.Format, m.Format())
+	testValue(t, tt.FileType, m.FileType())
 }
 
 func testValue(t *testing.T, expected interface{}, found interface{}) {
