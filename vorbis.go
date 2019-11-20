@@ -25,32 +25,28 @@ type metadataVorbis struct {
 }
 
 func (m *metadataVorbis) readVorbisComment(r io.Reader) error {
-	vendorLen, err := readInt32LittleEndian(r)
+	vendorLen, err := readUint32LittleEndian(r)
 	if err != nil {
 		return err
 	}
 
-	if vendorLen < 0 {
-		return fmt.Errorf("invalid encoding: expected positive length, got %d", vendorLen)
-	}
-
-	vendor, err := readString(r, vendorLen)
+	vendor, err := readString(r, int(vendorLen))
 	if err != nil {
 		return err
 	}
 	m.c["vendor"] = vendor
 
-	commentsLen, err := readInt32LittleEndian(r)
+	commentsLen, err := readUint32LittleEndian(r)
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < commentsLen; i++ {
-		l, err := readInt32LittleEndian(r)
+	for i := uint32(0); i < commentsLen; i++ {
+		l, err := readUint32LittleEndian(r)
 		if err != nil {
 			return err
 		}
-		s, err := readString(r, l)
+		s, err := readString(r, int(l))
 		if err != nil {
 			return err
 		}

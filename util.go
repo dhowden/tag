@@ -74,8 +74,10 @@ func read7BitChunkedInt(r io.Reader, n int) (int, error) {
 	return get7BitChunkedInt(b), nil
 }
 
-func readInt32LittleEndian(r io.Reader) (int, error) {
-	var n int32
-	err := binary.Read(r, binary.LittleEndian, &n)
-	return int(n), err
+func readUint32LittleEndian(r io.Reader) (uint32, error) {
+	b, err := readBytes(r, 4)
+	if err != nil {
+		return 0, err
+	}
+	return binary.LittleEndian.Uint32(b), nil
 }
