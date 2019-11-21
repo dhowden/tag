@@ -54,20 +54,21 @@ var mp3id3v11Metadata = testMetadata{
 
 func TestReadFrom(t *testing.T) {
 	testdata := map[string]testMetadata{
-		"with_tags/sample.flac":       fullMetadata,
-		"with_tags/sample.id3v11.mp3": mp3id3v11Metadata,
-		"with_tags/sample.id3v22.mp3": fullMetadata,
-		"with_tags/sample.id3v23.mp3": fullMetadata,
-		"with_tags/sample.id3v24.mp3": fullMetadata,
-		"with_tags/sample.m4a":        fullMetadata,
-		"with_tags/sample.mp4":        fullMetadata,
-		"with_tags/sample.ogg":        fullMetadata,
-		"with_tags/sample.dsf":        fullMetadata,
-		"without_tags/sample.flac":    emptyMetadata,
-		"without_tags/sample.m4a":     emptyMetadata,
-		"without_tags/sample.mp3":     emptyMetadata,
-		"without_tags/sample.mp4":     emptyMetadata,
-		"without_tags/sample.ogg":     emptyMetadata,
+		"with_tags/sample.flac":          fullMetadata,
+		"with_tags/sample.id3v11.mp3":    mp3id3v11Metadata,
+		"with_tags/sample.id3v22.mp3":    fullMetadata,
+		"with_tags/sample.id3v23.mp3":    fullMetadata,
+		"with_tags/sample.id3v24.mp3":    fullMetadata,
+		"with_tags/sample.m4a":           fullMetadata,
+		"with_tags/sample.mp4":           fullMetadata,
+		"with_tags/sample.ogg":           fullMetadata,
+		"with_tags/sample.multipage.ogg": fullMetadata,
+		"with_tags/sample.dsf":           fullMetadata,
+		"without_tags/sample.flac":       emptyMetadata,
+		"without_tags/sample.m4a":        emptyMetadata,
+		"without_tags/sample.mp3":        emptyMetadata,
+		"without_tags/sample.mp4":        emptyMetadata,
+		"without_tags/sample.ogg":        emptyMetadata,
 	}
 
 	for path, metadata := range testdata {
