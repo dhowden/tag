@@ -41,7 +41,7 @@ func getIntLittleEndian(b []byte) int {
 	return n
 }
 
-func readBytes(r io.Reader, n int) ([]byte, error) {
+func readBytes(r io.Reader, n uint) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := io.ReadFull(r, b)
 	if err != nil {
@@ -50,7 +50,7 @@ func readBytes(r io.Reader, n int) ([]byte, error) {
 	return b, nil
 }
 
-func readString(r io.Reader, n int) (string, error) {
+func readString(r io.Reader, n uint) (string, error) {
 	b, err := readBytes(r, n)
 	if err != nil {
 		return "", err
@@ -58,7 +58,15 @@ func readString(r io.Reader, n int) (string, error) {
 	return string(b), nil
 }
 
-func readInt(r io.Reader, n int) (int, error) {
+func readUint(r io.Reader, n uint) (uint, error) {
+	x, err := readInt(r, n)
+	if err != nil {
+		return 0, err
+	}
+	return uint(x), nil
+}
+
+func readInt(r io.Reader, n uint) (int, error) {
 	b, err := readBytes(r, n)
 	if err != nil {
 		return 0, err
@@ -66,12 +74,12 @@ func readInt(r io.Reader, n int) (int, error) {
 	return getInt(b), nil
 }
 
-func read7BitChunkedInt(r io.Reader, n int) (int, error) {
+func read7BitChunkedUint(r io.Reader, n uint) (uint, error) {
 	b, err := readBytes(r, n)
 	if err != nil {
 		return 0, err
 	}
-	return get7BitChunkedInt(b), nil
+	return uint(get7BitChunkedInt(b)), nil
 }
 
 func readUint32LittleEndian(r io.Reader) (uint32, error) {
