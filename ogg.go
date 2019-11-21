@@ -100,7 +100,7 @@ func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
 // by setting header_type_flag 0x1 (continued packet).
 // See https://www.xiph.org/ogg/doc/framing.html on packets spanning pages.
 func readPackets(r io.ReadSeeker) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
+	buf := &bytes.Buffer{}
 
 	firstPage := true
 	for {
