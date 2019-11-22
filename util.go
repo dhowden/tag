@@ -32,13 +32,12 @@ func getInt(b []byte) int {
 	return n
 }
 
-func getIntLittleEndian(b []byte) int {
-	var n int
-	for i := len(b) - 1; i >= 0; i-- {
-		n = n << 8
-		n |= int(b[i])
+func readUint64LittleEndian(r io.Reader) (uint64, error) {
+	b, err := readBytes(r, 8)
+	if err != nil {
+		return 0, err
 	}
-	return n
+	return binary.LittleEndian.Uint64(b), nil
 }
 
 func readBytes(r io.Reader, n uint) ([]byte, error) {
