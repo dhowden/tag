@@ -5,6 +5,7 @@
 package tag
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -80,35 +81,38 @@ func TestGetInt(t *testing.T) {
 	}
 }
 
-func TestGetIntLittleEndian(t *testing.T) {
+func TestGetUintLittleEndian(t *testing.T) {
 	tests := []struct {
 		input  []byte
-		output int
+		output uint64
 	}{
 		{
-			[]byte{},
+			[]byte{0, 0, 0, 0, 0, 0, 0, 0},
 			0,
 		},
 		{
-			[]byte{0x01},
+			[]byte{0x01, 0, 0, 0, 0, 0, 0, 0},
 			1,
 		},
 		{
-			[]byte{0xF1, 0xF2},
+			[]byte{0xF1, 0xF2, 0, 0, 0, 0, 0, 0},
 			0xF2F1,
 		},
 		{
-			[]byte{0xF1, 0xF2, 0xF3},
+			[]byte{0xF1, 0xF2, 0xF3, 0, 0, 0, 0, 0},
 			0xF3F2F1,
 		},
 		{
-			[]byte{0xF1, 0xF2, 0xF3, 0xF4},
+			[]byte{0xF1, 0xF2, 0xF3, 0xF4, 0, 0, 0, 0},
 			0xF4F3F2F1,
 		},
 	}
 
 	for ii, tt := range tests {
-		got := getIntLittleEndian(tt.input)
+		got, err := readUint64LittleEndian(bytes.NewReader(tt.input))
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
 		if got != tt.output {
 			t.Errorf("[%d] getInt(%v) = %v, expected %v", ii, tt.input, got, tt.output)
 		}

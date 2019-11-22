@@ -138,7 +138,7 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32, pro
 		contentType = "text"
 	} else {
 		// read the data
-		b, err = readBytes(r, int(size))
+		b, err = readBytes(r, uint(size))
 		if err != nil {
 			return err
 		}
@@ -246,7 +246,7 @@ func readCustomAtom(r io.ReadSeeker, size uint32) (_ string, data []string, _ er
 			return "", nil, errors.New("--- invalid size")
 		}
 
-		b, err := readBytes(r, int(subSize-8))
+		b, err := readBytes(r, uint(subSize-8))
 		if err != nil {
 			return "", nil, err
 		}

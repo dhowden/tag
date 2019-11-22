@@ -30,7 +30,7 @@ func (m *metadataVorbis) readVorbisComment(r io.Reader) error {
 		return err
 	}
 
-	vendor, err := readString(r, int(vendorLen))
+	vendor, err := readString(r, uint(vendorLen))
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (m *metadataVorbis) readVorbisComment(r io.Reader) error {
 		if err != nil {
 			return err
 		}
-		s, err := readString(r, int(l))
+		s, err := readString(r, uint(l))
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func (m *metadataVorbis) readPictureBlock(r io.Reader) error {
 	if !ok {
 		return fmt.Errorf("invalid picture type: %v", b)
 	}
-	mimeLen, err := readInt(r, 4)
+	mimeLen, err := readUint(r, 4)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (m *metadataVorbis) readPictureBlock(r io.Reader) error {
 		ext = "gif"
 	}
 
-	descLen, err := readInt(r, 4)
+	descLen, err := readUint(r, 4)
 	if err != nil {
 		return err
 	}
