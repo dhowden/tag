@@ -132,7 +132,7 @@ func readPackets(r io.ReadSeeker) ([]byte, error) {
 		firstPage = false
 
 		// Read the number of segments
-		nS, err := readInt(r, 1)
+		nS, err := readUint(r, 1)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func readPackets(r io.ReadSeeker) ([]byte, error) {
 
 		// Calculate remaining page size
 		pageSize := 0
-		for i := 0; i < nS; i++ {
+		for i := uint(0); i < nS; i++ {
 			pageSize += int(segments[i])
 		}
 
