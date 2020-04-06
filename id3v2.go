@@ -267,9 +267,10 @@ func readID3v2Frames(r io.Reader, offset uint, h *id3v2Header) (map[string]inter
 			break
 		}
 
+		var dataLengthIndicator uint
 		if flags != nil {
-			if flags.Compression {
-				_, err = read7BitChunkedUint(r, 4) // read 4
+			if flags.Compression || flags.DataLengthIndicator {
+				dataLengthIndicator, err = read7BitChunkedUint(r, 4) // read 4
 				if err != nil {
 					return nil, err
 				}
@@ -282,6 +283,10 @@ func readID3v2Frames(r io.Reader, offset uint, h *id3v2Header) (map[string]inter
 					return nil, err
 				}
 				size--
+			}
+
+			if flags.DataLengthIndicator {
+				size = dataLengthIndicator
 			}
 		}
 
