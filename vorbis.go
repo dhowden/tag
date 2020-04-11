@@ -5,6 +5,8 @@
 package tag
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -56,6 +58,15 @@ func (m *metadataVorbis) readVorbisComment(r io.Reader) error {
 		}
 		m.c[strings.ToLower(k)] = v
 	}
+
+	if b64data, ok := m.c["metadata_block_picture"]; ok {
+		data, err := base64.StdEncoding.DecodeString(b64data)
+		if err != nil {
+			return err
+		}
+		m.readPictureBlock(bytes.NewReader(data))
+	}
+
 	return nil
 }
 
