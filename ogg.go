@@ -6,156 +6,163 @@ package tag
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 )
 
-const (
-	idType      int = 1
-	commentType int = 3
+var (
+	vorbisCommentPrefix = []byte("\x03vorbis")
+	opusTagsPrefix      = []byte("OpusTags")
 )
+
+var oggCRC32Poly04c11db7 = oggCRCTable(0x04c11db7)
+
+type crc32Table [256]uint32
+
+func oggCRCTable(poly uint32) *crc32Table {
+	var t crc32Table
+
+	for i := 0; i < 256; i++ {
+		crc := uint32(i) << 24
+		for j := 0; j < 8; j++ {
+			if crc&0x80000000 != 0 {
+				crc = (crc << 1) ^ poly
+			} else {
+				crc <<= 1
+			}
+		}
+		t[i] = crc
+	}
+
+	return &t
+}
+
+func oggCRCUpdate(crc uint32, tab *crc32Table, p []byte) uint32 {
+	for _, v := range p {
+		crc = (crc << 8) ^ tab[byte(crc>>24)^v]
+	}
+	return crc
+}
+
+type oggPageHeader struct {
+	Magic           [4]byte // "OggS"
+	Version         uint8
+	Flags           uint8
+	GranulePosition uint64
+	SerialNumber    uint32
+	SequenceNumber  uint32
+	CRC             uint32
+	Segments        uint8
+}
+
+type oggDemuxer struct {
+	packetBufs map[uint32]*bytes.Buffer
+}
+
+// Read ogg packets, can return empty slice of packets and nil err
+// if more data is needed
+func (o *oggDemuxer) Read(r io.Reader) ([][]byte, error) {
+	headerBuf := &bytes.Buffer{}
+	var oh oggPageHeader
+	if err := binary.Read(io.TeeReader(r, headerBuf), binary.LittleEndian, &oh); err != nil {
+		return nil, err
+	}
+
+	if bytes.Compare(oh.Magic[:], []byte("OggS")) != 0 {
+		// TODO: seek for syncword?
+		return nil, errors.New("expected 'OggS'")
+	}
+
+	segmentTable := make([]byte, oh.Segments)
+	if _, err := io.ReadFull(r, segmentTable); err != nil {
+		return nil, err
+	}
+	var segmentsSize int64
+	for _, s := range segmentTable {
+		segmentsSize += int64(s)
+	}
+	segmentsData := make([]byte, segmentsSize)
+	if _, err := io.ReadFull(r, segmentsData); err != nil {
+		return nil, err
+	}
+
+	headerBytes := headerBuf.Bytes()
+	// reset CRC to zero in header before checksum
+	headerBytes[22] = 0
+	headerBytes[23] = 0
+	headerBytes[24] = 0
+	headerBytes[25] = 0
+	crc := oggCRCUpdate(0, oggCRC32Poly04c11db7, headerBytes)
+	crc = oggCRCUpdate(crc, oggCRC32Poly04c11db7, segmentTable)
+	crc = oggCRCUpdate(crc, oggCRC32Poly04c11db7, segmentsData)
+	if crc != oh.CRC {
+		return nil, fmt.Errorf("expected crc %x != %x", oh.CRC, crc)
+	}
+
+	if o.packetBufs == nil {
+		o.packetBufs = map[uint32]*bytes.Buffer{}
+	}
+
+	var packetBuf *bytes.Buffer
+	continued := oh.Flags&0x1 != 0
+	if continued {
+		if b, ok := o.packetBufs[oh.SerialNumber]; ok {
+			packetBuf = b
+		} else {
+			return nil, fmt.Errorf("could not find continued packet %d", oh.SerialNumber)
+		}
+	} else {
+		packetBuf = &bytes.Buffer{}
+	}
+
+	var packets [][]byte
+	var p int
+	for _, s := range segmentTable {
+		packetBuf.Write(segmentsData[p : p+int(s)])
+		if s < 255 {
+			packets = append(packets, packetBuf.Bytes())
+			packetBuf = &bytes.Buffer{}
+		}
+		p += int(s)
+	}
+
+	o.packetBufs[oh.SerialNumber] = packetBuf
+
+	return packets, nil
+}
 
 // ReadOGGTags reads OGG metadata from the io.ReadSeeker, returning the resulting
 // metadata in a Metadata implementation, or non-nil error if there was a problem.
 // See http://www.xiph.org/vorbis/doc/Vorbis_I_spec.html
 // and http://www.xiph.org/ogg/doc/framing.html for details.
-func ReadOGGTags(r io.ReadSeeker) (Metadata, error) {
-	oggs, err := readString(r, 4)
-	if err != nil {
-		return nil, err
-	}
-	if oggs != "OggS" {
-		return nil, errors.New("expected 'OggS'")
-	}
-
-	// Skip 22 bytes of Page header to read page_segments length byte at position 26
-	// See http://www.xiph.org/ogg/doc/framing.html
-	_, err = r.Seek(22, io.SeekCurrent)
-	if err != nil {
-		return nil, err
-	}
-
-	nS, err := readInt(r, 1)
-	if err != nil {
-		return nil, err
-	}
-
-	// Seek and discard the segments
-	_, err = r.Seek(int64(nS), io.SeekCurrent)
-	if err != nil {
-		return nil, err
-	}
-
-	// First packet type is identification, type 1
-	t, err := readInt(r, 1)
-	if err != nil {
-		return nil, err
-	}
-	if t != idType {
-		return nil, errors.New("expected 'vorbis' identification type 1")
-	}
-
-	// Seek and discard 29 bytes from common and identification header
-	// See http://www.xiph.org/vorbis/doc/Vorbis_I_spec.html#x1-610004.2
-	_, err = r.Seek(29, io.SeekCurrent)
-	if err != nil {
-		return nil, err
-	}
-
-	// Read comment header packet. May include setup header packet, if it is on the
-	// same page. First audio packet is guaranteed to be on the separate page.
-	// See https://www.xiph.org/vorbis/doc/Vorbis_I_spec.html#x1-132000A.2
-	ch, err := readPackets(r)
-	if err != nil {
-		return nil, err
-	}
-	chr := bytes.NewReader(ch)
-
-	// First packet type is comment, type 3
-	t, err = readInt(chr, 1)
-	if err != nil {
-		return nil, err
-	}
-	if t != commentType {
-		return nil, errors.New("expected 'vorbis' comment type 3")
-	}
-
-	// Seek and discard 6 bytes from common header
-	_, err = chr.Seek(6, io.SeekCurrent)
-	if err != nil {
-		return nil, err
-	}
-
-	m := &metadataOGG{
-		newMetadataVorbis(),
-	}
-
-	err = m.readVorbisComment(chr)
-	return m, err
-}
-
-// readPackets reads vorbis header packets from contiguous ogg pages in ReadSeeker.
-// The pages are considered contiguous, if the first lacing value in second
-// page's segment table continues rather than begins a packet. This is indicated
-// by setting header_type_flag 0x1 (continued packet).
-// See https://www.xiph.org/ogg/doc/framing.html on packets spanning pages.
-func readPackets(r io.ReadSeeker) ([]byte, error) {
-	buf := &bytes.Buffer{}
-
-	firstPage := true
+// For Opus see https://tools.ietf.org/html/rfc7845
+func ReadOGGTags(r io.Reader) (Metadata, error) {
+	od := &oggDemuxer{}
 	for {
-		// Read capture pattern
-		oggs, err := readString(r, 4)
+		bs, err := od.Read(r)
 		if err != nil {
 			return nil, err
 		}
-		if oggs != "OggS" {
-			return nil, errors.New("expected 'OggS'")
-		}
 
-		// Read page header
-		head, err := readBytes(r, 22)
-		if err != nil {
-			return nil, err
-		}
-		headerTypeFlag := head[1]
-
-		continuation := headerTypeFlag&0x1 > 0
-		if !(firstPage || continuation) {
-			// Rewind to the beginning of the page
-			_, err = r.Seek(-26, io.SeekCurrent)
-			if err != nil {
-				return nil, err
+		for _, b := range bs {
+			switch {
+			case bytes.HasPrefix(b, vorbisCommentPrefix):
+				m := &metadataOGG{
+					newMetadataVorbis(),
+				}
+				err = m.readVorbisComment(bytes.NewReader(b[len(vorbisCommentPrefix):]))
+				return m, err
+			case bytes.HasPrefix(b, opusTagsPrefix):
+				m := &metadataOGG{
+					newMetadataVorbis(),
+				}
+				err = m.readVorbisComment(bytes.NewReader(b[len(opusTagsPrefix):]))
+				return m, err
 			}
-			break
-		}
-		firstPage = false
-
-		// Read the number of segments
-		nS, err := readUint(r, 1)
-		if err != nil {
-			return nil, err
-		}
-
-		// Read segment table
-		segments, err := readBytes(r, nS)
-		if err != nil {
-			return nil, err
-		}
-
-		// Calculate remaining page size
-		pageSize := 0
-		for i := uint(0); i < nS; i++ {
-			pageSize += int(segments[i])
-		}
-
-		_, err = io.CopyN(buf, r, int64(pageSize))
-		if err != nil {
-			return nil, err
 		}
 	}
-
-	return buf.Bytes(), nil
 }
 
 type metadataOGG struct {
