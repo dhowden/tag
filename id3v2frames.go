@@ -564,6 +564,10 @@ func (p Picture) String() string {
 // Description        <textstring> $00 (00)
 // Picture data       <binary data>
 func readPICFrame(b []byte) (*Picture, error) {
+	if len(b) < 5 {
+		return nil, errors.New("invalid PIC frame")
+	}
+
 	enc := b[0]
 	ext := string(b[1:4])
 	picType := b[4]
