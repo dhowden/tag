@@ -457,6 +457,9 @@ func readTextWithDescrFrame(b []byte, hasLang bool, encoded bool) (*Comm, error)
 
 	c := &Comm{}
 	if hasLang {
+		if len(b) < 3 {
+			return nil, fmt.Errorf("hasLang set but not enough data for language information")
+		}
 		c.Language = string(b[:3])
 		b = b[3:]
 	}
