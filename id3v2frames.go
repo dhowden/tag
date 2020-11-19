@@ -608,8 +608,15 @@ func readPICFrame(b []byte) (*Picture, error) {
 // Description     <text string according to encoding> $00 (00)
 // Picture data    <binary data>
 func readAPICFrame(b []byte) (*Picture, error) {
+	if len(b) == 0 {
+		return nil, errors.New("error decoding APIC: invalid encoding")
+	}
 	enc := b[0]
 	mimeDataSplit := bytes.SplitN(b[1:], singleZero, 2)
+	if len(mimeDataSplit) != 2 {
+		return nil, errors.New("error decoding APIC: invalid encoding")
+	}
+
 	mimeType := string(mimeDataSplit[0])
 
 	b = mimeDataSplit[1]
