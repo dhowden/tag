@@ -340,10 +340,7 @@ func readID3v2Frames(r io.Reader, offset uint, h *id3v2Header) (map[string]inter
 			result[rawName] = txt
 
 		case name == "UFID" || name == "UFI":
-			t, err := readUFID(b)
-			if err != nil {
-				return nil, err
-			}
+			t := readUFID(b)
 			result[rawName] = t
 
 		case name == "WXXX" || name == "WXX":

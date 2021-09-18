@@ -505,16 +505,18 @@ func (u UFID) String() string {
 	return fmt.Sprintf("%v (%v)", u.Provider, string(u.Identifier))
 }
 
-func readUFID(b []byte) (*UFID, error) {
+func readUFID(b []byte) *UFID {
 	result := bytes.SplitN(b, singleZero, 2)
 	if len(result) != 2 {
-		return nil, errors.New("expected to split UFID data into 2 pieces")
+		return &UFID{
+			Identifier: result[0],
+		}
 	}
 
 	return &UFID{
 		Provider:   string(result[0]),
 		Identifier: result[1],
-	}, nil
+	}
 }
 
 var pictureTypes = map[byte]string{
