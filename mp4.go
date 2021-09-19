@@ -47,6 +47,7 @@ var atoms = atomNames(map[string]string{
 	"disk":    "disc",
 })
 
+// Source: https://exiftool.org/TagNames/QuickTime.html
 var genreIDValues = map[int]string{
 	2:        "Blues",
 	3:        "Comedy",
