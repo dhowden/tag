@@ -638,7 +638,7 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32, pro
 		data = string(b)
 
 	case "uint8":
-		if len(b) < 1 {
+		if len(b) == 0 {
 			return fmt.Errorf("invalid encoding: expected at least %d bytes, for integer tag data, got %d", 1, len(b))
 		}
 		data = getInt(b[len(b)-1:])
@@ -759,7 +759,7 @@ func (m metadataMP4) Composer() string {
 
 func (m metadataMP4) Genre() string {
 	genre := m.getString(atoms.Name("genre"))
-	if len(genre) < 1 {
+	if len(genre) == 0 {
 		genreID := m.getInt(atoms.Name("genre ID"))
 		if genreID == 0 {
 			genreID := m.getInt(atoms.Name("genre ID3v1 ID")) - 1
