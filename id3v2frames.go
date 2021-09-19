@@ -508,6 +508,7 @@ func (u UFID) String() string {
 func readUFID(b []byte) *UFID {
 	result := bytes.SplitN(b, singleZero, 2)
 	if len(result) != 2 {
+		// Sometimes the UFID consists of one part, for example: track-5979322WOAF
 		return &UFID{
 			Identifier: result[0],
 		}
