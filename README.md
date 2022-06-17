@@ -54,7 +54,7 @@ construct the checksum.
 There are simple command-line tools which demonstrate basic tag extraction and summing:
 
 ```console
-$ go get github.com/dhowden/tag/...
+$ go install github.com/dhowden/tag/cmd/tag@latest
 $ cd $GOPATH/bin
 $ ./tag 11\ High\ Hopes.m4a
 Metadata Format: MP4
