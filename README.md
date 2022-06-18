@@ -1,6 +1,5 @@
 # MP3/MP4/OGG/FLAC metadata parsing library
-[![Build Status](https://travis-ci.org/dhowden/tag.svg?branch=master)](https://travis-ci.org/dhowden/tag)
-[![GoDoc](https://godoc.org/github.com/dhowden/tag?status.svg)](https://godoc.org/github.com/dhowden/tag)
+[![GoDoc](https://pkg.go.dev/badge/github.com/dhowden/tag)](https://pkg.go.dev/github.com/dhowden/tag)
 
 This package provides MP3 (ID3v1,2.{2,3,4}) and MP4 (ACC, M4A, ALAC), OGG and FLAC metadata detection, parsing and artwork extraction.
 
@@ -47,7 +46,7 @@ type Metadata interface {
 This package also provides a metadata-invariant checksum for audio files: only the audio data is used to
 construct the checksum.
 
-[http://godoc.org/github.com/dhowden/tag#Sum](http://godoc.org/github.com/dhowden/tag#Sum)
+[https://pkg.go.dev/github.com/dhowden/tag#Sum](https://pkg.go.dev/github.com/dhowden/tag#Sum)
 
 ## Tools
 
