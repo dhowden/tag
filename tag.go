@@ -30,7 +30,6 @@ var ErrNoTagsFound = errors.New("no tags found")
 // Supported file types.
 func AcceptedFileTypes() []FileType {
 	return []FileType{
-		FileType(strings.ToLower(string(UnknownFileType))),
 		FileType(strings.ToLower(string(MP3))),
 		FileType(strings.ToLower(string(M4A))),
 		FileType(strings.ToLower(string(M4B))),
