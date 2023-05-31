@@ -194,6 +194,11 @@ func (m *metadataVorbis) Composer() string {
 	if m.c["composer"] != "" {
 		return m.c["composer"]
 	}
+	// PERFORMER
+	// The artist(s) who performed the work. In classical music this would be the
+	// conductor, orchestra, soloists. In an audio book it would be the actor who
+	// did the reading. In popular music this is typically the same as the ARTIST
+	// and is omitted.
 	if m.c["performer"] != "" {
 		return m.c["performer"]
 	}
