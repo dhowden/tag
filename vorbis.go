@@ -173,14 +173,10 @@ func (m *metadataVorbis) Title() string {
 }
 
 func (m *metadataVorbis) Artist() string {
-	// PERFORMER
-	// The artist(s) who performed the work. In classical music this would be the
-	// conductor, orchestra, soloists. In an audio book it would be the actor who
-	// did the reading. In popular music this is typically the same as the ARTIST
-	// and is omitted.
-	if m.c["performer"] != "" {
-		return m.c["performer"]
-	}
+	// ARTIST
+	// The artist generally considered responsible for the work. In popular music
+	// this is usually the performing band or singer. For classical music it would
+	// be the composer. For an audio book it would be the author of the original text.
 	return m.c["artist"]
 }
 
@@ -195,15 +191,16 @@ func (m *metadataVorbis) AlbumArtist() string {
 }
 
 func (m *metadataVorbis) Composer() string {
-	// ARTIST
-	// The artist generally considered responsible for the work. In popular music
-	// this is usually the performing band or singer. For classical music it would
-	// be the composer. For an audio book it would be the author of the original text.
 	if m.c["composer"] != "" {
 		return m.c["composer"]
 	}
-	if m.c["performer"] == "" {
-		return ""
+	// PERFORMER
+	// The artist(s) who performed the work. In classical music this would be the
+	// conductor, orchestra, soloists. In an audio book it would be the actor who
+	// did the reading. In popular music this is typically the same as the ARTIST
+	// and is omitted.
+	if m.c["performer"] != "" {
+		return m.c["performer"]
 	}
 	return m.c["artist"]
 }
