@@ -44,14 +44,14 @@ var id3v2Genres = [...]string{
 	"Heavy Metal", "Black Metal", "Crossover", "Contemporary Christian",
 	"Christian Rock ", "Merengue", "Salsa", "Thrash Metal", "Anime", "JPop",
 	"Synthpop",
-	"Christmas", "Art rock", "Baroque", "Bhangra", "Big beat", "Breakbeat",
+	"Christmas", "Art Rock", "Baroque", "Bhangra", "Big Beat", "Breakbeat",
 	"Chillout", "Downtempo", "Dub", "EBM", "Eclectic", "Electro",
 	"Electroclash", "Emo", "Experimental", "Garage", "Global", "IDM",
 	"Illbient", "Industro-Goth", "Jam Band", "Krautrock", "Leftfield", "Lounge",
-	"Math rock", "New romantic", "Nu-breakz", "Post-punk", "Post-rock", "Psytrance",
-	"Shoegaze", "Space rock", "Trop rock", "World music", "Neoclassical", "Audiobook",
-	"Audio theatre", "Neue Deutsche Welle", "Podcast", "Indie-rock", "G-Funk", "Dubstep",
-	"Garage rock", "Psybient",
+	"Math Rock", "New Romantic", "Nu-Breakz", "Post-Punk", "Post-Rock", "Psytrance",
+	"Shoegaze", "Space Rock", "Trop Rock", "World Music", "Neoclassical", "Audiobook",
+	"Audio Theatre", "Neue Deutsche Welle", "Podcast", "Indie-Rock", "G-Funk", "Dubstep",
+	"Garage Rock", "Psybient",
 }
 
 // id3v2Header is a type which represents an ID3v2 tag header.

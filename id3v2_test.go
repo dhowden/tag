@@ -141,7 +141,7 @@ func TestGenreExpension(t *testing.T) {
 		"Test (17)":    "Test Rock",
 		"(17)(93)":     "Rock Psychedelic Rock",
 		"(17)Test(93)": "Rock Test Psychedelic Rock",
-		"(175)":		"Post-punk",
+		"(175)":		"Post-Punk",
 		"(191)":		"Psybient",
 	}
 	for g, r := range tests {
