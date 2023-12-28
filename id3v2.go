@@ -50,7 +50,7 @@ var id3v2Genres = [...]string{
 	"Illbient", "Industro-Goth", "Jam Band", "Krautrock", "Leftfield", "Lounge",
 	"Math Rock", "New Romantic", "Nu-Breakz", "Post-Punk", "Post-Rock", "Psytrance",
 	"Shoegaze", "Space Rock", "Trop Rock", "World Music", "Neoclassical", "Audiobook",
-	"Audio Theatre", "Neue Deutsche Welle", "Podcast", "Indie-Rock", "G-Funk", "Dubstep",
+	"Audio Theatre", "Neue Deutsche Welle", "Podcast", "Indie Rock", "G-Funk", "Dubstep",
 	"Garage Rock", "Psybient",
 }
 
