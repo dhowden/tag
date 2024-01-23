@@ -136,20 +136,31 @@ func SumID3v1(r io.ReadSeeker) (string, error) {
 // SumID3v2 constructs a checksum of MP3 audio file data (assumed to have ID3v2 tags) provided by the
 // io.ReadSeeker which is metadata invariant.
 func SumID3v2(r io.ReadSeeker) (string, error) {
-	header, _, err := readID3v2Header(r)
+	header, offset, err := readID3v2Header(r)
 	if err != nil {
 		return "", fmt.Errorf("error reading ID3v2 header: %v", err)
 	}
 
-	_, err = r.Seek(int64(header.Size), io.SeekCurrent)
+	endOffset := int64(128)
+	n, err := r.Seek(-endOffset, io.SeekEnd)
+	if err != nil {
+		return "", fmt.Errorf("error seeking end offset (%d bytes): %v", endOffset, err)
+	}
+	tag, err := readString(r, 3)
+	if err != nil {
+		return "", fmt.Errorf("error checking ID3v1: %w", err)
+	}
+	// seek to end if id3v1 does not exist
+	if tag != "TAG" {
+		n += endOffset
+	}
+
+	start := int64(offset + header.Size)
+	_, err = r.Seek(start, io.SeekStart)
 	if err != nil {
 		return "", fmt.Errorf("error seeking to end of ID3V2 header: %v", err)
 	}
-
-	n, err := sizeToEndOffset(r, 128)
-	if err != nil {
-		return "", fmt.Errorf("error determining read size to ID3v1 header: %v", err)
-	}
+	n -= start
 
 	// TODO: remove this check?????
 	if n < 0 {
