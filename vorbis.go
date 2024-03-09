@@ -210,6 +210,13 @@ func (m *metadataVorbis) Genre() string {
 }
 
 func (m *metadataVorbis) Year() int {
+	if len(m.c["year"]) != 0 {
+		year, err := strconv.Atoi(m.c["year"])
+		if err == nil {
+			return year
+		}
+	}
+
 	var dateFormat string
 
 	// The date need to follow the international standard https://en.wikipedia.org/wiki/ISO_8601
