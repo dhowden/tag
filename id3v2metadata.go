@@ -92,8 +92,7 @@ func (m metadataID3v2) Genre() string {
 func (m metadataID3v2) Year() int {
 	stringYear := m.getString(frames.Name("year", m.Format()))
 
-	year, _ := strconv.Atoi(stringYear)
-	if year != 0 {
+	if year, err := strconv.Atoi(stringYear); err == nil {
 		return year
 	}
 
