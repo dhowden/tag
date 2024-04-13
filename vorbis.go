@@ -210,19 +210,19 @@ func (m *metadataVorbis) Genre() string {
 }
 
 func (m *metadataVorbis) Year() int {
-	if len(m.c["year"]) != 0 {
-		year, err := strconv.Atoi(m.c["year"])
-		if err == nil {
-			return year
-		}
-	}
-
 	var dateFormat string
 
 	// The date need to follow the international standard https://en.wikipedia.org/wiki/ISO_8601
 	// and obviously the VorbisComment standard https://wiki.xiph.org/VorbisComment#Date_and_time
 	switch len(m.c["date"]) {
 	case 0:
+		// Fallback on year tag as some files use that.
+		if len(m.c["year"]) != 0 {
+			year, err := strconv.Atoi(m.c["year"])
+			if err == nil {
+				return year
+			}
+		}
 		return 0
 	case 4:
 		dateFormat = "2006"
