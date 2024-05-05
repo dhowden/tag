@@ -14,7 +14,7 @@ type blockType byte
 
 // FLAC block types.
 const (
-	// Stream Info Block           0
+	StreamInfoBlock blockType = 0
 	// Padding Block               1
 	// Application Block           2
 	// Seektable Block             3
@@ -34,8 +34,8 @@ func ReadFLACTags(r io.ReadSeeker) (Metadata, error) {
 		return nil, errors.New("expected 'fLaC'")
 	}
 
-	m := &metadataFLAC{
-		newMetadataVorbis(),
+	m := &MetadataFLAC{
+		metadataVorbis: newMetadataVorbis(),
 	}
 
 	for {
@@ -51,18 +51,24 @@ func ReadFLACTags(r io.ReadSeeker) (Metadata, error) {
 	return m, nil
 }
 
-type metadataFLAC struct {
+type MetadataFLAC struct {
 	*metadataVorbis
+
+	MiniBlockSize uint16
+	MaxBlockSize  uint16
+	SampleRate    uint32
+	TotalSamples  uint64
+	Duration      float64
 }
 
-func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err error) {
+func (m *MetadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err error) {
 	blockHeader, err := readBytes(r, 1)
 	if err != nil {
 		return
 	}
 
 	if getBit(blockHeader[0], 7) {
-		blockHeader[0] ^= (1 << 7)
+		blockHeader[0] ^= 1 << 7
 		last = true
 	}
 
@@ -72,6 +78,8 @@ func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err er
 	}
 
 	switch blockType(blockHeader[0]) {
+	case StreamInfoBlock:
+		err = m.readStreamInfo(r, blockLen)
 	case vorbisCommentBlock:
 		err = m.readVorbisComment(r)
 
@@ -84,6 +92,27 @@ func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err er
 	return
 }
 
-func (m *metadataFLAC) FileType() FileType {
+func (m *MetadataFLAC) readStreamInfo(r io.ReadSeeker, len int) error {
+	data := make([]byte, len)
+
+	if _, err := r.Read(data); err != nil {
+		return err
+	}
+
+	m.MiniBlockSize = uint16(data[0])<<8 | uint16(data[1])
+	m.MaxBlockSize = uint16(data[2])<<8 | uint16(data[3])
+
+	m.SampleRate = (uint32(data[10])<<16 | uint32(data[11])<<8 | uint32(data[12])) >> 4
+
+	m.TotalSamples = uint64(data[13])<<32 | uint64(data[14])<<24 | uint64(data[15])<<16 | uint64(data[16])<<8 | uint64(data[17])
+
+	m.TotalSamples ^= m.TotalSamples >> 36 << 36
+
+	m.Duration = float64(m.TotalSamples) / float64(m.SampleRate)
+
+	return nil
+}
+
+func (m *MetadataFLAC) FileType() FileType {
 	return FLAC
 }
