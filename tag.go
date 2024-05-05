@@ -6,23 +6,51 @@
 // parsing and artwork extraction.
 //
 // Detect and parse tag metadata from an io.ReadSeeker (i.e. an *os.File):
-// 	m, err := tag.ReadFrom(f)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	log.Print(m.Format()) // The detected format.
-// 	log.Print(m.Title())  // The title of the track (see Metadata interface for more details).
+//
+//	m, err := tag.ReadFrom(f)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	log.Print(m.Format()) // The detected format.
+//	log.Print(m.Title())  // The title of the track (see Metadata interface for more details).
 package tag
 
 import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 )
 
 // ErrNoTagsFound is the error returned by ReadFrom when the metadata format
 // cannot be identified.
 var ErrNoTagsFound = errors.New("no tags found")
+
+// Supported file types.
+func AcceptedFileTypes() []FileType {
+	return []FileType{
+		FileType(strings.ToLower(string(MP3))),
+		FileType(strings.ToLower(string(M4A))),
+		FileType(strings.ToLower(string(M4B))),
+		FileType(strings.ToLower(string(M4P))),
+		FileType(strings.ToLower(string(ALAC))),
+		FileType(strings.ToLower(string(FLAC))),
+		FileType(strings.ToLower(string(OGG))),
+		FileType(strings.ToLower(string(DSF))),
+	}
+}
+
+// Parse metadata from the file at the given path
+// for readonly operations
+func Parse(path string) (Metadata, error) {
+	f, err := os.Open(path)
+	if err == nil {
+		defer f.Close()
+		return ReadFrom(f)
+	}
+	return nil, err
+}
 
 // ReadFrom detects and parses audio file metadata tags (currently supports ID3v1,2.{2,3,4}, MP4, FLAC/OGG).
 // Returns non-nil error if the format of the given data could not be determined, or if there was a problem
