@@ -30,6 +30,7 @@ var atoms = atomNames(map[string]string{
 	"aART":    "album_artist",
 	"\xa9day": "year",
 	"\xa9nam": "title",
+	"gnre":    "genreid",
 	"\xa9gen": "genre",
 	"trkn":    "track",
 	"\xa9wrt": "composer",
@@ -183,6 +184,14 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32, pro
 		return nil
 	}
 
+	if name == "gnre" {
+		if len(b) < 2 {
+			return fmt.Errorf("invalid encoding: expected at least %d bytes for genre id, got %d", 2, len(b))
+		}
+		m.data[name] = int(b[1])
+		return nil
+	}
+
 	if contentType == "implicit" {
 		if name == "covr" {
 			if bytes.HasPrefix(b, pngHeader) {
@@ -325,6 +334,12 @@ func (m metadataMP4) Composer() string {
 }
 
 func (m metadataMP4) Genre() string {
+	if g, ok := m.data["gnre"]; ok {
+		if gid, ok := g.(int); ok && gid > 0 && gid <= len(id3v1Genres) {
+			return id3v1Genres[gid-1]
+		}
+	}
+
 	return m.getString(atoms.Name("genre"))
 }
 
