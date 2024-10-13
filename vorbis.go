@@ -62,7 +62,7 @@ func (m *metadataVorbis) readVorbisComment(r io.Reader) error {
 	if b64data, ok := m.c["metadata_block_picture"]; ok {
 		data, err := base64.StdEncoding.DecodeString(b64data)
 		if err != nil {
-			return err
+			return nil
 		}
 		m.readPictureBlock(bytes.NewReader(data))
 	}
