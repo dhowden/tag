@@ -6,12 +6,13 @@
 // parsing and artwork extraction.
 //
 // Detect and parse tag metadata from an io.ReadSeeker (i.e. an *os.File):
-// 	m, err := tag.ReadFrom(f)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	log.Print(m.Format()) // The detected format.
-// 	log.Print(m.Title())  // The title of the track (see Metadata interface for more details).
+//
+//	m, err := tag.ReadFrom(f)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	log.Print(m.Format()) // The detected format.
+//	log.Print(m.Title())  // The title of the track (see Metadata interface for more details).
 package tag
 
 import (
@@ -53,6 +54,14 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 
 	case string(b[0:4]) == "DSD ":
 		return ReadDSFTags(r)
+
+	case string(b[0:4]) == "RIFF":
+		err := setWavOffset(r)
+		if err != nil {
+			return nil, err
+		}
+		// call ReadFrom() again at the new offset
+		return ReadFrom(r)
 	}
 
 	m, err := ReadID3v1Tags(r)
@@ -95,6 +104,7 @@ const (
 	FLAC            FileType = "FLAC" // FLAC file
 	OGG             FileType = "OGG"  // OGG file
 	DSF             FileType = "DSF"  // DSF file DSD Sony format see https://dsd-guide.com/sites/default/files/white-papers/DSFFileFormatSpec_E.pdf
+	WAV             FileType = "WAV"  // WAVE file
 )
 
 // Metadata is an interface which is used to describe metadata retrieved by this package.

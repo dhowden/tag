@@ -7,12 +7,12 @@ import (
 
 // Identify identifies the format and file type of the data in the ReadSeeker.
 func Identify(r io.ReadSeeker) (format Format, fileType FileType, err error) {
-	b, err := readBytes(r, 11)
+	b, err := readBytes(r, 12)
 	if err != nil {
 		return
 	}
 
-	_, err = r.Seek(-11, io.SeekCurrent)
+	_, err = r.Seek(-12, io.SeekCurrent)
 	if err != nil {
 		err = fmt.Errorf("could not seek back to original position: %v", err)
 		return
@@ -56,6 +56,16 @@ func Identify(r io.ReadSeeker) (format Format, fileType FileType, err error) {
 			return
 		}
 		return format, MP3, nil
+
+	case string(b[0:4]) == "RIFF" && string(b[8:12]) == "WAVE":
+		format = UnknownFormat
+		err = setWavOffset(r)
+		if err != nil {
+			return format, WAV, err
+		}
+		// call Identify() again, replacing whatever fileType it finds with WAV
+		format, _, err = Identify(r)
+		return format, WAV, err
 	}
 
 	n, err := r.Seek(-128, io.SeekEnd)
