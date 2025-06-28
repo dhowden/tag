@@ -7,6 +7,7 @@ package tag
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 )
 
@@ -99,4 +100,46 @@ func readUint32LittleEndian(r io.Reader) (uint32, error) {
 		return 0, err
 	}
 	return binary.LittleEndian.Uint32(b), nil
+}
+
+func readUint32BigEndian(r io.Reader) (uint32, error) {
+	b, err := readBytes(r, 4)
+	if err != nil {
+		return 0, err
+	}
+	return binary.BigEndian.Uint32(b), nil
+}
+
+func cutBits(in []byte, offset, n uint) (uint64, error) {
+	if n > 64 {
+		return 0, errors.New("n exceeds maximum value of 64")
+	}
+	if len(in)*8 < int(offset+n) {
+		return 0, errors.New("out of bounds read")
+	}
+	var res uint64
+	var bitsRead uint
+	if splitStart := offset % 8; splitStart > 0 {
+		remaining := 8 - splitStart
+		splitByte := uint64(in[int(offset/8)]) & ((1 << remaining) - 1)
+		if n <= remaining {
+			return uint64(splitByte) >> uint64(remaining-n), nil
+		}
+		bitsRead = remaining
+		res |= splitByte
+	}
+
+	wholeBytes := int((n - bitsRead) / 8)
+	start := int((offset + bitsRead) / 8)
+	for i := range wholeBytes {
+		res <<= 8
+		res |= uint64(in[start+i])
+		bitsRead += 8
+	}
+
+	if remaining := n - bitsRead; remaining > 0 {
+		res <<= remaining
+		res |= uint64(in[start+wholeBytes]) >> (8 - remaining)
+	}
+	return res, nil
 }

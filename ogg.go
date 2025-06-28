@@ -10,11 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 )
 
 var (
-	vorbisCommentPrefix = []byte("\x03vorbis")
-	opusTagsPrefix      = []byte("OpusTags")
+	vorbisIdentificationPrefix = []byte("\x01vorbis")
+	vorbisCommentPrefix        = []byte("\x03vorbis")
+	opusTagsPrefix             = []byte("OpusTags")
 )
 
 var oggCRC32Poly04c11db7 = oggCRCTable(0x04c11db7)
@@ -63,21 +65,21 @@ type oggDemuxer struct {
 
 // Read ogg packets, can return empty slice of packets and nil err
 // if more data is needed
-func (o *oggDemuxer) Read(r io.Reader) ([][]byte, error) {
+func (o *oggDemuxer) Read(r io.Reader) ([][]byte, int, error) {
 	headerBuf := &bytes.Buffer{}
 	var oh oggPageHeader
 	if err := binary.Read(io.TeeReader(r, headerBuf), binary.LittleEndian, &oh); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	if bytes.Compare(oh.Magic[:], []byte("OggS")) != 0 {
 		// TODO: seek for syncword?
-		return nil, errors.New("expected 'OggS'")
+		return nil, 0, errors.New("expected 'OggS'")
 	}
 
 	segmentTable := make([]byte, oh.Segments)
 	if _, err := io.ReadFull(r, segmentTable); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	var segmentsSize int64
 	for _, s := range segmentTable {
@@ -85,7 +87,7 @@ func (o *oggDemuxer) Read(r io.Reader) ([][]byte, error) {
 	}
 	segmentsData := make([]byte, segmentsSize)
 	if _, err := io.ReadFull(r, segmentsData); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	headerBytes := headerBuf.Bytes()
@@ -98,7 +100,7 @@ func (o *oggDemuxer) Read(r io.Reader) ([][]byte, error) {
 	crc = oggCRCUpdate(crc, oggCRC32Poly04c11db7, segmentTable)
 	crc = oggCRCUpdate(crc, oggCRC32Poly04c11db7, segmentsData)
 	if crc != oh.CRC {
-		return nil, fmt.Errorf("expected crc %x != %x", oh.CRC, crc)
+		return nil, 0, fmt.Errorf("expected crc %x != %x", oh.CRC, crc)
 	}
 
 	if o.packetBufs == nil {
@@ -111,7 +113,7 @@ func (o *oggDemuxer) Read(r io.Reader) ([][]byte, error) {
 		if b, ok := o.packetBufs[oh.SerialNumber]; ok {
 			packetBuf = b
 		} else {
-			return nil, fmt.Errorf("could not find continued packet %d", oh.SerialNumber)
+			return nil, 0, fmt.Errorf("could not find continued packet %d", oh.SerialNumber)
 		}
 	} else {
 		packetBuf = &bytes.Buffer{}
@@ -130,35 +132,50 @@ func (o *oggDemuxer) Read(r io.Reader) ([][]byte, error) {
 
 	o.packetBufs[oh.SerialNumber] = packetBuf
 
-	return packets, nil
+	return packets, int(oh.GranulePosition), nil
 }
 
-// ReadOGGTags reads OGG metadata from the io.ReadSeeker, returning the resulting
+// ReadOGGMeta reads OGG metadata from the io.ReadSeeker, returning the resulting
 // metadata in a Metadata implementation, or non-nil error if there was a problem.
 // See http://www.xiph.org/vorbis/doc/Vorbis_I_spec.html
 // and http://www.xiph.org/ogg/doc/framing.html for details.
 // For Opus see https://tools.ietf.org/html/rfc7845
-func ReadOGGTags(r io.Reader) (Metadata, error) {
+func ReadOGGMeta(r io.Reader) (Metadata, error) {
 	od := &oggDemuxer{}
+	metaExtracted := false
+	m := &metadataOGG{
+		metadataVorbis: newMetadataVorbis(),
+	}
+	prevPos := 0
 	for {
-		bs, err := od.Read(r)
-		if err != nil {
+		bs, pos, err := od.Read(r)
+		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, err
 		}
+		if errors.Is(err, io.EOF) {
+			if !metaExtracted {
+				return nil, ErrNoTagsFound
+			}
+			if m.sampleRate > 0 {
+				m.duration = time.Second * (time.Duration(prevPos) / time.Duration(m.sampleRate))
+			}
+			return m, nil
+		}
+		prevPos = pos
 
 		for _, b := range bs {
 			switch {
 			case bytes.HasPrefix(b, vorbisCommentPrefix):
-				m := &metadataOGG{
-					newMetadataVorbis(),
-				}
+				metaExtracted = true
 				err = m.readVorbisComment(bytes.NewReader(b[len(vorbisCommentPrefix):]))
-				return m, err
 			case bytes.HasPrefix(b, opusTagsPrefix):
-				m := &metadataOGG{
-					newMetadataVorbis(),
-				}
+				metaExtracted = true
 				err = m.readVorbisComment(bytes.NewReader(b[len(opusTagsPrefix):]))
+				m.sampleRate = 48000
+			case bytes.HasPrefix(b, vorbisIdentificationPrefix):
+				err = m.readVorbisIdentification(bytes.NewReader(b[len(vorbisIdentificationPrefix):]))
+			}
+			if err != nil {
 				return m, err
 			}
 		}
@@ -167,8 +184,26 @@ func ReadOGGTags(r io.Reader) (Metadata, error) {
 
 type metadataOGG struct {
 	*metadataVorbis
+	sampleRate uint32
+	duration   time.Duration
 }
 
 func (m *metadataOGG) FileType() FileType {
 	return OGG
+}
+
+func (m *metadataOGG) Duration() time.Duration {
+	return m.duration
+}
+
+func (m *metadataOGG) readVorbisIdentification(r io.ReadSeeker) error {
+	_, err := r.Seek(5, io.SeekCurrent)
+	if err != nil {
+		return err
+	}
+	m.sampleRate, err = readUint32LittleEndian(r)
+	if err != nil {
+		return err
+	}
+	return nil
 }

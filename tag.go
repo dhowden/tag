@@ -6,18 +6,20 @@
 // parsing and artwork extraction.
 //
 // Detect and parse tag metadata from an io.ReadSeeker (i.e. an *os.File):
-// 	m, err := tag.ReadFrom(f)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	log.Print(m.Format()) // The detected format.
-// 	log.Print(m.Title())  // The title of the track (see Metadata interface for more details).
+//
+//	m, err := tag.ReadFrom(f)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	log.Print(m.Format()) // The detected format.
+//	log.Print(m.Title())  // The title of the track (see Metadata interface for more details).
 package tag
 
 import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 )
 
 // ErrNoTagsFound is the error returned by ReadFrom when the metadata format
@@ -40,29 +42,53 @@ func ReadFrom(r io.ReadSeeker) (Metadata, error) {
 
 	switch {
 	case string(b[0:4]) == "fLaC":
-		return ReadFLACTags(r)
+		return ReadFLACMeta(r)
 
 	case string(b[0:4]) == "OggS":
-		return ReadOGGTags(r)
+		return ReadOGGMeta(r)
 
 	case string(b[4:8]) == "ftyp":
 		return ReadAtoms(r)
 
 	case string(b[0:3]) == "ID3":
-		return ReadID3v2Tags(r)
+		size, err := getFileSize(r)
+		if err != nil {
+			return nil, fmt.Errorf("could not get file size: %w", err)
+		}
+		return ReadV2MP3Meta(r, size)
+
+	case b[0] == 0xff && (b[1] == 0xfb || b[2] == 0xf3 || b[3] == 0xf2):
+		size, err := getFileSize(r)
+		if err != nil {
+			return nil, fmt.Errorf("could not get file size: %w", err)
+		}
+		return ReadV1MP3Meta(r, size)
 
 	case string(b[0:4]) == "DSD ":
-		return ReadDSFTags(r)
+		return ReadDSFMeta(r)
 	}
 
-	m, err := ReadID3v1Tags(r)
+	return nil, errors.ErrUnsupported
+}
+
+func getFileSize(r io.ReadSeeker) (int64, error) {
+	current, err := r.Seek(0, io.SeekCurrent)
 	if err != nil {
-		if err == ErrNotID3v1 {
-			err = ErrNoTagsFound
-		}
-		return nil, err
+		return 0, fmt.Errorf("could not get current pos: %w", err)
 	}
-	return m, nil
+
+	size, err := r.Seek(0, io.SeekEnd)
+	if err != nil {
+		return 0, fmt.Errorf("could not seek to end pos: %w", err)
+	}
+
+	_, err = r.Seek(current, io.SeekStart)
+	if err != nil {
+		return 0, fmt.Errorf("could not reset current pos: %w", err)
+	}
+
+	return size, nil
+
 }
 
 // Format is an enumeration of metadata types supported by this package.
@@ -144,4 +170,6 @@ type Metadata interface {
 	// Raw returns the raw mapping of retrieved tag names and associated values.
 	// NB: tag/atom names are not standardised between formats.
 	Raw() map[string]interface{}
+
+	Duration() time.Duration
 }

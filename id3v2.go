@@ -60,6 +60,7 @@ type id3v2Header struct {
 	Unsynchronisation bool
 	ExtendedHeader    bool
 	Experimental      bool
+	FooterPresent     bool
 	Size              uint
 }
 
@@ -97,6 +98,7 @@ func readID3v2Header(r io.Reader) (h *id3v2Header, offset uint, err error) {
 		Unsynchronisation: getBit(b[2], 7),
 		ExtendedHeader:    getBit(b[2], 6),
 		Experimental:      getBit(b[2], 5),
+		FooterPresent:     getBit(b[2], 4),
 		Size:              uint(get7BitChunkedInt(b[3:7])),
 	}
 
@@ -425,7 +427,7 @@ func (r *unsynchroniser) Read(p []byte) (int, error) {
 
 // ReadID3v2Tags parses ID3v2.{2,3,4} tags from the io.ReadSeeker into a Metadata, returning
 // non-nil error on failure.
-func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
+func ReadID3v2Tags(r io.ReadSeeker) (*metadataID3v2, error) {
 	h, offset, err := readID3v2Header(r)
 	if err != nil {
 		return nil, err
@@ -440,12 +442,13 @@ func ReadID3v2Tags(r io.ReadSeeker) (Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	return metadataID3v2{header: h, frames: f}, nil
+
+	return &metadataID3v2{header: h, frames: f}, nil
 }
 
 var id3v2genreRe = regexp.MustCompile(`(.*[^(]|.* |^)\(([0-9]+)\) *(.*)$`)
 
-//  id3v2genre parse a id3v2 genre tag and expand the numeric genres
+// id3v2genre parse a id3v2 genre tag and expand the numeric genres
 func id3v2genre(genre string) string {
 	c := true
 	for c {

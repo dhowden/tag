@@ -12,6 +12,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var atomTypes = map[int]string{
@@ -70,6 +71,7 @@ func (f atomNames) Name(n string) []string {
 type metadataMP4 struct {
 	fileType FileType
 	data     map[string]interface{}
+	duration time.Duration
 }
 
 // ReadAtoms reads MP4 metadata atoms from the io.ReadSeeker into a Metadata, returning
@@ -83,7 +85,7 @@ func ReadAtoms(r io.ReadSeeker) (Metadata, error) {
 	return m, err
 }
 
-func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
+func (m *metadataMP4) readAtoms(r io.ReadSeeker) error {
 	for {
 		name, size, err := readAtomHeader(r)
 		if err != nil {
@@ -104,6 +106,26 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 
 		case "moov", "udta", "ilst":
 			return m.readAtoms(r)
+		case "mvhd":
+			_, err = r.Seek(12, io.SeekCurrent)
+			if err != nil {
+				return err
+			}
+			sampleRate, err := readUint32BigEndian(r)
+			if err != nil {
+				return err
+			}
+			sampleNum, err := readUint32BigEndian(r)
+			if err != nil {
+				return err
+			}
+			m.duration = time.Second * (time.Duration(sampleNum) / time.Duration(sampleRate))
+
+			_, err = r.Seek(int64(size-8-12-8), io.SeekCurrent)
+			if err != nil {
+				return err
+			}
+			continue
 		}
 
 		_, ok := atoms[name]
@@ -135,7 +157,7 @@ func (m metadataMP4) readAtoms(r io.ReadSeeker) error {
 	}
 }
 
-func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32, processedData []string) error {
+func (m *metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32, processedData []string) error {
 	var b []byte
 	var err error
 	var contentType string
@@ -376,4 +398,8 @@ func (m metadataMP4) Picture() *Picture {
 	}
 	p, _ := v.(*Picture)
 	return p
+}
+
+func (m metadataMP4) Duration() time.Duration {
+	return m.duration
 }

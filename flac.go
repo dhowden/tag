@@ -6,7 +6,9 @@ package tag
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"time"
 )
 
 // blockType is a type which represents an enumeration of valid FLAC blocks
@@ -14,18 +16,18 @@ type blockType byte
 
 // FLAC block types.
 const (
-	// Stream Info Block           0
 	// Padding Block               1
 	// Application Block           2
 	// Seektable Block             3
 	// Cue Sheet Block             5
+	streamInfoBlock    blockType = 0
 	vorbisCommentBlock blockType = 4
 	pictureBlock       blockType = 6
 )
 
-// ReadFLACTags reads FLAC metadata from the io.ReadSeeker, returning the resulting
+// ReadFLACMeta reads FLAC metadata from the io.ReadSeeker, returning the resulting
 // metadata in a Metadata implementation, or non-nil error if there was a problem.
-func ReadFLACTags(r io.ReadSeeker) (Metadata, error) {
+func ReadFLACMeta(r io.ReadSeeker) (Metadata, error) {
 	flac, err := readString(r, 4)
 	if err != nil {
 		return nil, err
@@ -35,11 +37,11 @@ func ReadFLACTags(r io.ReadSeeker) (Metadata, error) {
 	}
 
 	m := &metadataFLAC{
-		newMetadataVorbis(),
+		metadataVorbis: newMetadataVorbis(),
 	}
 
 	for {
-		last, err := m.readFLACMetadataBlock(r)
+		last, err := m.readFLACBlock(r)
 		if err != nil {
 			return nil, err
 		}
@@ -53,9 +55,10 @@ func ReadFLACTags(r io.ReadSeeker) (Metadata, error) {
 
 type metadataFLAC struct {
 	*metadataVorbis
+	duration time.Duration
 }
 
-func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err error) {
+func (m *metadataFLAC) readFLACBlock(r io.ReadSeeker) (last bool, err error) {
 	blockHeader, err := readBytes(r, 1)
 	if err != nil {
 		return
@@ -78,12 +81,40 @@ func (m *metadataFLAC) readFLACMetadataBlock(r io.ReadSeeker) (last bool, err er
 	case pictureBlock:
 		err = m.readPictureBlock(r)
 
+	case streamInfoBlock:
+		err = m.readStreamingInfoBlock(r, blockLen)
+
 	default:
 		_, err = r.Seek(int64(blockLen), io.SeekCurrent)
 	}
 	return
 }
 
+func (m *metadataFLAC) readStreamingInfoBlock(r io.Reader, len int) error {
+	data := make([]byte, len)
+	if _, err := r.Read(data); err != nil {
+		return err
+	}
+
+	sampleRate, err := cutBits(data, 80, 20)
+	if err != nil {
+		return fmt.Errorf("reading sample rate: %w", err)
+	}
+
+	sampleNum, err := cutBits(data, 108, 36)
+	if err != nil {
+		return fmt.Errorf("reading sample number: %w", err)
+	}
+
+	m.duration = time.Second * (time.Duration(sampleNum) / time.Duration(sampleRate))
+
+	return nil
+}
+
 func (m *metadataFLAC) FileType() FileType {
 	return FLAC
+}
+
+func (m *metadataFLAC) Duration() time.Duration {
+	return m.duration
 }
