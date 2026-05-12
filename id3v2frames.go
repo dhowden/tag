@@ -408,7 +408,9 @@ func decodeUTF16WithBOM(b []byte) (string, error) {
 
 func decodeUTF16(b []byte, bo binary.ByteOrder) (string, error) {
 	if len(b)%2 != 0 {
-		return "", errors.New("invalid encoding: expected even number of bytes for UTF-16 encoded text")
+		// Some encoders append a stray trailing byte (often a null
+		// terminator); drop it rather than failing.
+		b = b[:len(b)-1]
 	}
 	s := make([]uint16, 0, len(b)/2)
 	for i := 0; i < len(b); i += 2 {
