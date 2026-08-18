@@ -129,8 +129,11 @@ func (m *metadataVorbis) readPictureBlock(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	data := make([]byte, dataLen)
-	_, err = io.ReadFull(r, data)
+	// Use readBytes rather than allocating dataLen up front: dataLen comes
+	// straight from the file, so a bogus value could otherwise force a huge
+	// allocation (memory amplification) from a tiny input. readBytes caps the
+	// up-front allocation and streams larger amounts.
+	data, err := readBytes(r, uint(dataLen))
 	if err != nil {
 		return err
 	}
