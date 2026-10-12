@@ -207,7 +207,13 @@ func (m metadataMP4) readAtomData(r io.ReadSeeker, name string, size uint32, pro
 		if len(b) < 1 {
 			return fmt.Errorf("invalid encoding: expected at least %d bytes, for integer tag data, got %d", 1, len(b))
 		}
-		data = getInt(b[:1])
+		// tmpo is a big-endian integer whose width is the value length.
+		// The first byte alone is 0 for every tempo below 256.
+		if name == "tmpo" {
+			data = getInt(b)
+		} else {
+			data = getInt(b[:1])
+		}
 
 	case "jpeg", "png":
 		data = &Picture{
